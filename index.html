@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Intelligence Machine</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --surface: #111318;
+    --surface2: #181c24;
+    --border: #1e2430;
+    --accent: #f0a500;
+    --accent2: #e05c1a;
+    --green: #22c55e;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --font-display: 'Syne', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(240,165,0,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(240,165,0,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 24px 20px; }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+
+  .logo-text h1 {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+
+  .logo-text span {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .dot-live {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* API Key input */
+  .api-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .api-label {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  .api-input {
+    flex: 1;
+    min-width: 200px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .api-input:focus { border-color: var(--accent); }
+
+  .api-save {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+  }
+
+  .api-save:hover { opacity: 0.85; }
+
+  /* Navigation tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 24px;
+    background: var(--surface);
+    padding: 6px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar { display: none; }
+
+  .tab {
+    flex: 1;
+    min-width: fit-content;
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .tab:hover { color: var(--text); background: var(--surface2); }
+
+  .tab.active {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #000;
+  }
+
+  .tab-icon { font-size: 15px; }
+
+  /* Panel */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  .card-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Scan controls */
+  .scan-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 600px) {
+    .scan-grid { grid-template-columns: 1fr; }
+  }
+
+  .form-group label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+
+  .form-select, .form-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    appearance: none;
+  }
+
+  .form-select:focus, .form-input:focus { border-color: var(--accent); }
+
+  .form-textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 14px;
+    outline: none;
+    resize: vertical;
+    min-height: 80px;
+    transition: border-color 0.2s;
+  }
+
+  .form-textarea:focus { border-color: var(--accent); }
+
+  /* Buttons */
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    padding: 13px 28px;
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.3px;
+  }
+
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(240,165,0,0.25); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 22px;
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Response area */
+  .response-area {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    min-height: 120px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text);
+    white-space: pre-wrap;
+    display: none;
+    position: relative;
+  }
+
+  .response-area.visible { display: block; }
+
+  .response-area.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--muted);
+  }
+
+  /* Loading spinner */
+  .spinner {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Result formatting */
+  .response-content { font-family: var(--font-display); font-size: 14px; line-height: 1.8; }
+  .response-content h3 { color: var(--accent); font-size: 15px; margin: 16px 0 8px; }
+  .response-content h2 { color: var(--text); font-size: 17px; margin: 20px 0 10px; }
+  .response-content strong { color: var(--accent); }
+  .response-content ul { padding-left: 20px; margin: 8px 0; }
+  .response-content li { margin: 4px 0; }
+  .response-content p { margin: 8px 0; }
+  .response-content .tag { display: inline-block; background: rgba(240,165,0,0.15); color: var(--accent); border-radius: 4px; padding: 2px 8px; font-size: 12px; margin: 2px; font-family: var(--font-mono); }
+  .response-content .tag-green { background: rgba(34,197,94,0.15); color: var(--green); }
+  .response-content .tag-red { background: rgba(239,68,68,0.15); color: var(--red); }
+
+  /* Quick scan chips */
+  .quick-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .chip {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--muted);
+  }
+
+  .chip:hover { border-color: var(--accent); color: var(--accent); background: rgba(240,165,0,0.08); }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .stat-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--accent);
+    display: block;
+  }
+
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 4px;
+  }
+
+  /* Profit calculator */
+  .calc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 600px) {
+    .calc-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  .calc-result {
+    background: linear-gradient(135deg, rgba(240,165,0,0.1), rgba(224,92,26,0.1));
+    border: 1px solid rgba(240,165,0,0.3);
+    border-radius: 10px;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+  }
+
+  .calc-item { text-align: center; }
+  .calc-val { font-size: 20px; font-weight: 800; }
+  .calc-val.positive { color: var(--green); }
+  .calc-val.negative { color: var(--red); }
+  .calc-val.neutral { color: var(--accent); }
+  .calc-key { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* History */
+  .history-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .history-item:hover { border-color: var(--accent); }
+  .history-query { font-size: 13px; font-weight: 600; }
+  .history-time { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+
+  /* Divider */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  /* Notification */
+  .notify {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    z-index: 1000;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s ease;
+  }
+
+  .notify.show { transform: translateY(0); opacity: 1; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">📡</div>
+      <div class="logo-text">
+        <h1>Market Intelligence Machine</h1>
+        <span>Amazon USA &amp; Canada · AI-Powered</span>
+      </div>
+    </div>
+    <div class="status-bar">
+      <div class="dot-live"></div>
+      <span id="statusText">Ready</span>
+    </div>
+  </header>
+
+  <!-- API Key -->
+  <div class="api-section">
+    <span class="api-label">🔑 Anthropic API Key</span>
+    <input type="password" class="api-input" id="apiKey" placeholder="sk-ant-..." />
+    <button class="api-save" onclick="saveKey()">Save Key</button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('scan')">
+      <span class="tab-icon">🔥</span> Trend Scanner
+    </button>
+    <button class="tab" onclick="switchTab('niche')">
+      <span class="tab-icon">🎯</span> Niche Analyzer
+    </button>
+    <button class="tab" onclick="switchTab('compare')">
+      <span class="tab-icon">🆚</span> USA vs Canada
+    </button>
+    <button class="tab" onclick="switchTab('profit')">
+      <span class="tab-icon">💰</span> Profit Calculator
+    </button>
+    <button class="tab" onclick="switchTab('supplier')">
+      <span class="tab-icon">📦</span> Supplier Finder
+    </button>
+  </div>
+
+  <!-- PANEL: Trend Scanner -->
+  <div class="panel active" id="panel-scan">
+    <div class="card">
+      <div class="card-title">🔥 Real-Time Trend Scanner</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">
+        AI scans the web right now to find what's selling best on Amazon. Updated every time you scan.
+      </p>
+
+      <div class="scan-grid">
+        <div class="form-group">
+          <label>Marketplace</label>
+          <select class="form-select" id="scanMarket">
+            <option value="both">Both USA & Canada</option>
+            <option value="usa">Amazon USA only</option>
+            <option value="canada">Amazon Canada only</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Category (optional)</label>
+          <select class="form-select" id="scanCategory">
+            <option value="all">All Categories</option>
+            <option value="health">Health & Personal Care</option>
+            <option value="home">Home & Kitchen</option>
+            <option value="pets">Pet Supplies</option>
+            <option value="sports">Sports & Outdoors</option>
+            <option value="baby">Baby Products</option>
+            <option value="auto">Automotive</option>
+            <option value="beauty">Beauty</option>
+            <option value="toys">Toys & Games</option>
+            <option value="garden">Garden & Outdoor</option>
+            <option value="tools">Tools & Hardware</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:16px;">
+        <label>Budget Range</label>
+        <select class="form-select" id="scanBudget">
+          <option value="1000-5000">$1,000 – $5,000</option>
+          <option value="500-1000">$500 – $1,000</option>
+          <option value="5000+">$5,000+</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Quick Scan</div>
+        <div class="quick-chips">
+          <span class="chip" onclick="quickScan('top trending products Amazon USA Canada right now 2025')">🔥 What's Trending Now</span>
+          <span class="chip" onclick="quickScan('best selling products under $50 Amazon USA 2025')">💵 Under $50 Best Sellers</span>
+          <span class="chip" onclick="quickScan('low competition high demand products Amazon FBA 2025')">🎯 Low Competition Niches</span>
+          <span class="chip" onclick="quickScan('seasonal products Amazon Canada spring summer 2025')">🌿 Seasonal Products</span>
+          <span class="chip" onclick="quickScan('Amazon Canada top selling categories 2025')">🍁 Canada Hot Categories</span>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="scanBtn" onclick="runScan()">
+        <span>📡</span> Scan Market Now
+      </button>
+    </div>
+
+    <div class="response-area" id="scan-response"></div>
+  </div>
+
+  <!-- PANEL: Niche Analyzer -->
+  <div class="panel" id="panel-niche">
+    <div class="card">
+      <div class="card-title">🎯 Niche Analyzer</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">
+        Enter any niche or product category — AI will analyze demand, competition, profit potential, and entry strategy.
+      </p>
+
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>Niche or Product Idea</label>
+        <input type="text" class="form-input" id="nicheInput" placeholder="e.g. silicone kitchen tools, dog supplements, bamboo products..." />
+      </div>
+
+      <div class="scan-grid" style="margin-bottom:16px;">
+        <div class="form-group">
+          <label>Marketplace</label>
+          <select class="form-select" id="nicheMarket">
+            <option value="both">USA & Canada</option>
+            <option value="usa">USA only</option>
+            <option value="canada">Canada only</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Your Model</label>
+          <select class="form-select" id="nicheModel">
+            <option value="wholesale">Wholesale</option>
+            <option value="arbitrage">Retail/Online Arbitrage</option>
+            <option value="private_label">Private Label</option>
+            <option value="any">Any model</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="nicheBtn" onclick="analyzeNiche()">
+        <span>🔍</span> Analyze This Niche
+      </button>
+    </div>
+
+    <div class="response-area" id="niche-response"></div>
+  </div>
+
+  <!-- PANEL: USA vs Canada -->
+  <div class="panel" id="panel-compare">
+    <div class="card">
+      <div class="card-title">🆚 USA vs Canada Comparison</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">
+        For any product or niche, compare both marketplaces — competition level, pricing, demand, and which one is better to enter first.
+      </p>
+
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>Product or Category to Compare</label>
+        <input type="text" class="form-input" id="compareInput" placeholder="e.g. air purifiers, protein powder, yoga mats..." />
+      </div>
+
+      <div class="form-group" style="margin-bottom:16px;">
+        <label>Your Budget</label>
+        <select class="form-select" id="compareBudget">
+          <option value="1000-5000">$1,000 – $5,000</option>
+          <option value="500-1000">$500 – $1,000</option>
+          <option value="5000+">$5,000+</option>
+        </select>
+      </div>
+
+      <button class="btn-primary" id="compareBtn" onclick="runCompare()">
+        <span>🆚</span> Compare Markets
+      </button>
+    </div>
+
+    <div class="response-area" id="compare-response"></div>
+  </div>
+
+  <!-- PANEL: Profit Calculator -->
+  <div class="panel" id="panel-profit">
+    <div class="card">
+      <div class="card-title">💰 FBA Profit Calculator</div>
+
+      <div class="calc-grid">
+        <div class="form-group">
+          <label>Buy Price ($)</label>
+          <input type="number" class="form-input" id="buyPrice" placeholder="8.50" oninput="calcProfit()" />
+        </div>
+        <div class="form-group">
+          <label>Sell Price ($)</label>
+          <input type="number" class="form-input" id="sellPrice" placeholder="24.99" oninput="calcProfit()" />
+        </div>
+        <div class="form-group">
+          <label>FBA Fee ($)</label>
+          <input type="number" class="form-input" id="fbaFee" placeholder="4.50" oninput="calcProfit()" />
+        </div>
+        <div class="form-group">
+          <label>Referral Fee (%)</label>
+          <input type="number" class="form-input" id="refFee" placeholder="15" oninput="calcProfit()" />
+        </div>
+        <div class="form-group">
+          <label>PPC / Ads ($)</label>
+          <input type="number" class="form-input" id="ppcFee" placeholder="1.50" oninput="calcProfit()" />
+        </div>
+        <div class="form-group">
+          <label>Units / month</label>
+          <input type="number" class="form-input" id="units" placeholder="50" oninput="calcProfit()" />
+        </div>
+      </div>
+
+      <div class="calc-result" id="calcResult">
+        <div class="calc-item">
+          <div class="calc-val neutral" id="res-revenue">—</div>
+          <div class="calc-key">Monthly Revenue</div>
+        </div>
+        <div class="calc-item">
+          <div class="calc-val neutral" id="res-profit">—</div>
+          <div class="calc-key">Monthly Profit</div>
+        </div>
+        <div class="calc-item">
+          <div class="calc-val neutral" id="res-margin">—</div>
+          <div class="calc-key">Net Margin</div>
+        </div>
+        <div class="calc-item">
+          <div class="calc-val neutral" id="res-roi">—</div>
+          <div class="calc-key">ROI</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🤖 AI Profit Check</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Paste your product details — AI will estimate FBA fees and profitability for you.</p>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>Describe Your Product</label>
+        <textarea class="form-textarea" id="profitDesc" placeholder="e.g. silicone baking mat, 40x30cm, buy for $6, plan to sell for $22 on Amazon Canada..."></textarea>
+      </div>
+      <button class="btn-primary" id="profitBtn" onclick="aiProfitCheck()">
+        <span>🤖</span> AI Estimate
+      </button>
+    </div>
+
+    <div class="response-area" id="profit-response"></div>
+  </div>
+
+  <!-- PANEL: Supplier Finder -->
+  <div class="panel" id="panel-supplier">
+    <div class="card">
+      <div class="card-title">📦 Supplier & Sourcing Finder</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">
+        AI finds the best sourcing options — wholesale distributors, Alibaba, local US/CA suppliers — for any product.
+      </p>
+
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>Product or Category</label>
+        <input type="text" class="form-input" id="supplierInput" placeholder="e.g. dog treats, LED light strips, kitchen gadgets..." />
+      </div>
+
+      <div class="scan-grid" style="margin-bottom:16px;">
+        <div class="form-group">
+          <label>Sourcing Model</label>
+          <select class="form-select" id="sourcingModel">
+            <option value="wholesale">Wholesale (USA/CA brands)</option>
+            <option value="alibaba">Alibaba / China</option>
+            <option value="arbitrage">Retail Arbitrage stores</option>
+            <option value="all">All options</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Min Order Budget</label>
+          <select class="form-select" id="supplierBudget">
+            <option value="1000-5000">$1,000 – $5,000</option>
+            <option value="under-1000">Under $1,000</option>
+            <option value="5000+">$5,000+</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="supplierBtn" onclick="findSuppliers()">
+        <span>🔎</span> Find Suppliers
+      </button>
+    </div>
+
+    <div class="response-area" id="supplier-response"></div>
+  </div>
+
+</div>
+
+<!-- Notification -->
+<div class="notify" id="notify"></div>
+
+<script>
+  // ── State ──────────────────────────────────────────────
+  let API_KEY = localStorage.getItem('mim_api_key') || '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';
+
+  window.onload = () => {
+    if (API_KEY) {
+      document.getElementById('apiKey').value = API_KEY;
+      showNotify('✅ API key loaded');
+    }
+  };
+
+  function saveKey() {
+    const k = document.getElementById('apiKey').value.trim();
+    if (!k) { showNotify('⚠️ Enter your API key first'); return; }
+    API_KEY = k;
+    localStorage.setItem('mim_api_key', k);
+    showNotify('✅ API key saved!');
+  }
+
+  function showNotify(msg) {
+    const n = document.getElementById('notify');
+    n.textContent = msg;
+    n.classList.add('show');
+    setTimeout(() => n.classList.remove('show'), 3000);
+  }
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    document.getElementById('panel-' + name).classList.add('active');
+  }
+
+  function setStatus(txt) {
+    document.getElementById('statusText').textContent = txt;
+  }
+
+  // ── Claude API call with web search ──────────────────
+  async function callClaude(systemPrompt, userPrompt, responseId, btnId) {
+    if (!API_KEY) { showNotify('⚠️ Please enter your API key first'); return; }
+
+    const btn = document.getElementById(btnId);
+    const res = document.getElementById(responseId);
+
+    btn.disabled = true;
+    setStatus('🔍 Scanning...');
+    res.className = 'response-area visible loading';
+    res.innerHTML = '<div class="spinner"></div><span>AI is scanning the web for live data...</span>';
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': API_KEY, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 2000,
+          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userPrompt }]
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.error) throw new Error(data.error.message);
+
+      const text = data.content
+        .filter(b => b.type === 'text')
+        .map(b => b.text)
+        .join('\n');
+
+      res.className = 'response-area visible';
+      res.innerHTML = `<div class="response-content">${formatResponse(text)}</div>`;
+      setStatus('✅ Done');
+
+    } catch (err) {
+      res.className = 'response-area visible';
+      res.innerHTML = `<span style="color:var(--red)">❌ Error: ${err.message}</span>`;
+      setStatus('❌ Error');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ── Format markdown-ish text to HTML ─────────────────
+  function formatResponse(text) {
+    return text
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/`(.+?)`/g, '<span class="tag">$1</span>')
+      .replace(/^- (.+)$/gm, '<li>$1</li>')
+      .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/^(?!<[hul])/gm, '')
+      .replace(/✅/g, '<span style="color:var(--green)">✅</span>')
+      .replace(/❌/g, '<span style="color:var(--red)">❌</span>')
+      .replace(/⚠️/g, '<span style="color:var(--accent)">⚠️</span>')
+      .replace(/🔥/g, '🔥')
+      || text;
+  }
+
+  // ── Trend Scanner ────────────────────────────────────
+  function runScan() {
+    const market = document.getElementById('scanMarket').value;
+    const cat = document.getElementById('scanCategory').value;
+    const budget = document.getElementById('scanBudget').value;
+
+    const marketStr = market === 'both' ? 'Amazon USA and Amazon Canada' : market === 'usa' ? 'Amazon USA' : 'Amazon Canada';
+    const catStr = cat === 'all' ? 'all categories' : cat;
+
+    const system = `You are a professional Amazon FBA market analyst with access to real-time web data. 
+You help sellers find profitable products to sell on Amazon. 
+Always search the web for the most current data before responding.
+Format your response clearly with sections, use emojis for readability.
+Focus on actionable, specific recommendations.`;
+
+    const prompt = `Search the web right now and find what products are trending and best-selling on ${marketStr} in ${catStr} category.
+
+The seller has a budget of ${budget} for initial inventory. They want to source wholesale or via retail arbitrage.
+They have an established 10-year Amazon account.
+
+Please:
+1. Search for current Amazon best sellers and trending products in this market
+2. List 5-8 specific product opportunities with estimated prices
+3. For each product: note demand level, competition, estimated buy price, estimated sell price, margin potential
+4. Highlight which products are EASIEST to enter right now
+5. Note any seasonal trends or timing considerations
+
+Be specific — real product names and categories, not vague advice.`;
+
+    callClaude(system, prompt, 'scan-response', 'scanBtn');
+  }
+
+  function quickScan(query) {
+    const system = `You are a professional Amazon FBA market analyst. Search the web for current data and provide actionable insights. Be specific and data-driven.`;
+    const prompt = `Search the web and answer this: ${query}
+
+Focus on what's relevant for an Amazon FBA seller with $1,000-$5,000 budget operating on Amazon USA and Canada.
+Give 5-7 specific product/niche recommendations with brief analysis for each.`;
+
+    if (!API_KEY) { showNotify('⚠️ Please enter your API key first'); return; }
+    document.getElementById('scanBtn').disabled = true;
+    const res = document.getElementById('scan-response');
+    setStatus('🔍 Scanning...');
+    res.className = 'response-area visible loading';
+    res.innerHTML = '<div class="spinner"></div><span>AI is scanning the web...</span>';
+
+    fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': API_KEY, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        system,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) throw new Error(data.error.message);
+      const text = data.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
+      res.className = 'response-area visible';
+      res.innerHTML = `<div class="response-content">${formatResponse(text)}</div>`;
+      setStatus('✅ Done');
+    })
+    .catch(err => {
+      res.className = 'response-area visible';
+      res.innerHTML = `<span style="color:var(--red)">❌ ${err.message}</span>`;
+      setStatus('❌ Error');
+    })
+    .finally(() => { document.getElementById('scanBtn').disabled = false; });
+  }
+
+  // ── Niche Analyzer ───────────────────────────────────
+  function analyzeNiche() {
+    const niche = document.getElementById('nicheInput').value.trim();
+    if (!niche) { showNotify('⚠️ Enter a niche to analyze'); return; }
+
+    const market = document.getElementById('nicheMarket').value;
+    const model = document.getElementById('nicheModel').value;
+
+    const system = `You are an expert Amazon FBA niche analyst. Use web search to find real current data. 
+Provide structured, actionable analysis. Use clear sections and be specific.`;
+
+    const prompt = `Analyze the "${niche}" niche for Amazon FBA on ${market} marketplace.
+Sourcing model: ${model}.
+
+Search the web for current data and provide:
+
+## Demand Analysis
+- Current search volume / demand level
+- Trend direction (growing/stable/declining)
+- Seasonal factors
+
+## Competition Analysis  
+- Number of established sellers
+- Top competitor brands
+- Entry difficulty (Easy/Medium/Hard)
+
+## Financial Estimate
+- Typical buy price range
+- Typical sell price range
+- Estimated FBA fees
+- Expected net margin %
+
+## Entry Strategy
+- Best sourcing approach for ${model}
+- Recommended initial inventory investment
+- Timeline to first sales
+
+## Risk Factors
+- Main risks to watch out for
+- Gating / brand restrictions to check
+- Any red flags
+
+## Verdict
+- Overall rating: 🔥 Hot / ✅ Good / ⚠️ Risky / ❌ Avoid
+- One-sentence recommendation`;
+
+    callClaude(system, prompt, 'niche-response', 'nicheBtn');
+  }
+
+  // ── USA vs Canada Compare ────────────────────────────
+  function runCompare() {
+    const product = document.getElementById('compareInput').value.trim();
+    if (!product) { showNotify('⚠️ Enter a product to compare'); return; }
+    const budget = document.getElementById('compareBudget').value;
+
+    const system = `You are an Amazon FBA expert specializing in USA and Canadian marketplaces. 
+Use web search to find real current data for both markets. Compare them objectively.`;
+
+    const prompt = `Compare selling "${product}" on Amazon USA vs Amazon Canada.
+Budget available: ${budget}.
+
+Search for current data and provide a side-by-side comparison:
+
+## Amazon USA (amazon.com)
+- Demand level & monthly search estimates
+- Competition level & number of sellers
+- Average selling price
+- FBA fee estimate
+- Estimated net margin
+- Ease of entry
+
+## Amazon Canada (amazon.ca)  
+- Demand level & monthly search estimates
+- Competition level & number of sellers
+- Average selling price
+- FBA fee estimate
+- Estimated net margin
+- Ease of entry
+
+## Head-to-Head Comparison
+| Factor | USA | Canada |
+|---|---|---|
+Show a simple table comparing key metrics.
+
+## My Recommendation
+- Which market to enter FIRST and WHY
+- Can you do both simultaneously?
+- Any important differences to know (currency, regulations, etc.)`;
+
+    callClaude(system, prompt, 'compare-response', 'compareBtn');
+  }
+
+  // ── Profit Calculator ────────────────────────────────
+  function calcProfit() {
+    const buy = parseFloat(document.getElementById('buyPrice').value) || 0;
+    const sell = parseFloat(document.getElementById('sellPrice').value) || 0;
+    const fba = parseFloat(document.getElementById('fbaFee').value) || 0;
+    const ref = parseFloat(document.getElementById('refFee').value) || 15;
+    const ppc = parseFloat(document.getElementById('ppcFee').value) || 0;
+    const units = parseFloat(document.getElementById('units').value) || 0;
+
+    if (sell === 0) return;
+
+    const refAmount = sell * (ref / 100);
+    const totalCost = buy + fba + refAmount + ppc;
+    const profitPerUnit = sell - totalCost;
+    const margin = ((profitPerUnit / sell) * 100).toFixed(1);
+    const roi = buy > 0 ? ((profitPerUnit / buy) * 100).toFixed(1) : 0;
+    const monthlyRevenue = (sell * units).toFixed(2);
+    const monthlyProfit = (profitPerUnit * units).toFixed(2);
+
+    const revenueEl = document.getElementById('res-revenue');
+    const profitEl = document.getElementById('res-profit');
+    const marginEl = document.getElementById('res-margin');
+    const roiEl = document.getElementById('res-roi');
+
+    revenueEl.textContent = `$${monthlyRevenue}`;
+    revenueEl.className = 'calc-val neutral';
+
+    profitEl.textContent = `$${monthlyProfit}`;
+    profitEl.className = `calc-val ${parseFloat(monthlyProfit) > 0 ? 'positive' : 'negative'}`;
+
+    marginEl.textContent = `${margin}%`;
+    marginEl.className = `calc-val ${parseFloat(margin) >= 20 ? 'positive' : parseFloat(margin) > 0 ? 'neutral' : 'negative'}`;
+
+    roiEl.textContent = `${roi}%`;
+    roiEl.className = `calc-val ${parseFloat(roi) >= 30 ? 'positive' : parseFloat(roi) > 0 ? 'neutral' : 'negative'}`;
+  }
+
+  function aiProfitCheck() {
+    const desc = document.getElementById('profitDesc').value.trim();
+    if (!desc) { showNotify('⚠️ Describe your product first'); return; }
+
+    const system = `You are an Amazon FBA financial analyst. Calculate realistic profitability estimates based on product descriptions. Be specific with numbers.`;
+
+    const prompt = `Estimate the FBA profitability for this product:
+"${desc}"
+
+Provide:
+## Fee Breakdown (per unit)
+- Estimated referral fee
+- Estimated FBA fulfillment fee
+- Estimated storage fee (monthly)
+- Recommended PPC budget
+
+## Profitability
+- Gross profit per unit
+- Net profit per unit  
+- Net margin %
+- ROI on inventory
+
+## Monthly Estimate (assuming 50 units/month)
+- Revenue
+- Total costs
+- Net profit
+
+## Verdict
+Is this worth pursuing? What margin should be the minimum target?`;
+
+    callClaude(system, prompt, 'profit-response', 'profitBtn');
+  }
+
+  // ── Supplier Finder ──────────────────────────────────
+  function findSuppliers() {
+    const product = document.getElementById('supplierInput').value.trim();
+    if (!product) { showNotify('⚠️ Enter a product to find suppliers'); return; }
+
+    const model = document.getElementById('sourcingModel').value;
+    const budget = document.getElementById('supplierBudget').value;
+
+    const system = `You are an Amazon FBA sourcing expert. Search the web for real supplier options. 
+Provide specific, actionable supplier recommendations with real company names and websites where possible.`;
+
+    const prompt = `Find sourcing options for "${product}" using the ${model} model. Budget: ${budget}.
+
+Search the web and provide:
+
+## Top Wholesale Distributors (if applicable)
+- Company names, websites, minimum orders
+- How to apply for wholesale account
+
+## Alibaba / International Sources (if applicable)  
+- Search terms to use on Alibaba
+- Typical MOQ and prices
+- What to look for in a supplier
+
+## Retail Arbitrage Stores (if applicable)
+- Which stores to check (TJ Maxx, HomeGoods, Costco, etc.)
+- Price thresholds to look for
+- Online arbitrage sites to monitor
+
+## Practical Next Steps
+- How to get started THIS WEEK
+- Red flags to avoid
+- Negotiation tips
+
+## Estimated Landed Cost
+- Estimate total cost to have product ready to sell in Amazon FBA warehouse`;
+
+    callClaude(system, prompt, 'supplier-response', 'supplierBtn');
+  }
+</script>
+</body>
+</html>
