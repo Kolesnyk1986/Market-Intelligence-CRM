@@ -1,0 +1,1965 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Intelligence Machine</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f6f8; --surface: #ffffff; --surface2: #eef0f4; --border: #dde1e8;
+    --accent: #e85d04; --accent2: #dc2f02; --green: #16a34a; --red: #dc2626;
+    --text: #1a1d23; --muted: #6b7280; --text-light: #4b5563;
+    --font-display: 'Plus Jakarta Sans', sans-serif; --font-mono: 'JetBrains Mono', monospace;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06); --shadow-md: 0 4px 12px rgba(0,0,0,0.08); --shadow-lg: 0 8px 30px rgba(0,0,0,0.1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-display); min-height: 100vh; overflow-x: hidden; }
+  body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 20% 0%, rgba(232,93,4,0.04) 0%, transparent 60%), radial-gradient(ellipse at 80% 100%, rgba(220,47,2,0.03) 0%, transparent 60%); pointer-events:none; z-index:0; }
+  .app { position:relative; z-index:1; max-width:1200px; margin:0 auto; padding:24px 20px; }
+
+  header { display:flex; align-items:center; justify-content:space-between; margin-bottom:32px; padding-bottom:20px; border-bottom:2px solid var(--border); flex-wrap:wrap; gap:12px; }
+  .logo { display:flex; align-items:center; gap:14px; }
+  .logo-icon { width:44px; height:44px; background:linear-gradient(135deg,var(--accent),var(--accent2)); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; box-shadow: var(--shadow-md); }
+  .logo-text h1 { font-size:18px; font-weight:800; letter-spacing:-0.5px; color:var(--text); }
+  .logo-text span { font-family:var(--font-mono); font-size:11px; color:var(--accent); letter-spacing:2px; text-transform:uppercase; }
+  .header-right { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+
+  .lang-switch { display:flex; align-items:center; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:3px; gap:2px; }
+  .lang-btn { background:transparent; border:none; border-radius:6px; padding:5px 12px; font-family:var(--font-display); font-size:13px; font-weight:700; cursor:pointer; color:var(--muted); transition:all 0.2s; }
+  .lang-btn.active { background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; }
+  .lang-btn:hover:not(.active) { color:var(--text); }
+
+  .status-bar { display:flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:12px; color:var(--muted); }
+  .dot-live { width:8px; height:8px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.3} }
+
+  .api-section { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px 20px; margin-bottom:16px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; box-shadow:var(--shadow-sm); }
+  .api-label { font-family:var(--font-mono); font-size:12px; color:var(--accent); white-space:nowrap; font-weight:600; }
+  .api-input { flex:1; min-width:200px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:8px 14px; color:var(--text); font-family:var(--font-mono); font-size:13px; outline:none; transition:border-color 0.2s; }
+  .api-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(232,93,4,0.1); }
+  .api-save { background:var(--accent); color:#fff; border:none; border-radius:8px; padding:8px 16px; font-family:var(--font-display); font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap; transition:all 0.2s; }
+  .api-save:hover { opacity:0.85; box-shadow:var(--shadow-sm); }
+
+  .tabs { display:flex; gap:4px; margin-bottom:24px; background:var(--surface); padding:6px; border-radius:12px; border:1px solid var(--border); overflow-x:auto; scrollbar-width:none; box-shadow:var(--shadow-sm); }
+  .tabs::-webkit-scrollbar { display:none; }
+  .tab { flex:1; min-width:fit-content; padding:10px 16px; border-radius:8px; border:none; background:transparent; color:var(--muted); font-family:var(--font-display); font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s; white-space:nowrap; display:flex; align-items:center; gap:7px; }
+  .tab:hover { color:var(--text); background:var(--surface2); }
+  .tab.active { background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; box-shadow:var(--shadow-sm); }
+
+  .panel { display:none; } .panel.active { display:block; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:24px; margin-bottom:20px; box-shadow:var(--shadow-sm); }
+  .card-title { font-size:14px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:1px; margin-bottom:16px; }
+
+  .scan-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+  @media(max-width:600px){ .scan-grid { grid-template-columns:1fr; } .calc-grid { grid-template-columns:1fr 1fr !important; } }
+  .form-group label { display:block; font-family:var(--font-mono); font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+  .form-select,.form-input { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 14px; color:var(--text); font-family:var(--font-display); font-size:14px; outline:none; transition:border-color 0.2s; appearance:none; }
+  .form-select:focus,.form-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(232,93,4,0.1); }
+  .form-textarea { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:12px 14px; color:var(--text); font-family:var(--font-display); font-size:14px; outline:none; resize:vertical; min-height:80px; }
+  .form-textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(232,93,4,0.1); }
+
+  .btn-primary { background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; border:none; border-radius:10px; padding:13px 28px; font-family:var(--font-display); font-size:14px; font-weight:800; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:8px; box-shadow:var(--shadow-md); }
+  .btn-primary:hover { transform:translateY(-1px); box-shadow:0 8px 24px rgba(232,93,4,0.25); }
+  .btn-primary:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+  .quick-chips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  .chip { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:6px 14px; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.2s; color:var(--text-light); box-shadow:var(--shadow-sm); }
+  .chip:hover { border-color:var(--accent); color:var(--accent); background:rgba(232,93,4,0.06); }
+
+  .response-area { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:20px; min-height:120px; font-size:13px; line-height:1.7; color:var(--text); display:none; box-shadow:var(--shadow-sm); }
+  .response-area.visible { display:block; }
+  .response-area.loading { display:flex; align-items:center; justify-content:center; gap:12px; color:var(--muted); }
+  .spinner { width:20px; height:20px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  .response-content { font-family:var(--font-display); font-size:14px; line-height:1.8; }
+  .response-content h2 { color:var(--text); font-size:17px; margin:20px 0 10px; }
+  .response-content h3 { color:var(--accent); font-size:15px; margin:16px 0 8px; }
+  .response-content strong { color:var(--accent2); }
+  .response-content ul { padding-left:20px; margin:8px 0; }
+  .response-content li { margin:4px 0; }
+  .response-content p { margin:8px 0; }
+  .response-content a { color:var(--accent); text-decoration:underline; }
+  .response-content a:hover { color:var(--accent2); }
+
+  .calc-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:16px; }
+  .calc-result { background:linear-gradient(135deg,rgba(240,165,0,0.1),rgba(224,92,26,0.1)); border:1px solid rgba(240,165,0,0.3); border-radius:10px; padding:16px; display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:12px; }
+  .calc-item { text-align:center; }
+  .calc-val { font-size:20px; font-weight:800; }
+  .calc-val.positive{color:var(--green)} .calc-val.negative{color:var(--red)} .calc-val.neutral{color:var(--accent)}
+  .calc-key { font-family:var(--font-mono); font-size:11px; color:var(--muted); margin-top:4px; }
+
+  .notify { position:fixed; bottom:24px; right:24px; background:var(--surface); border:1px solid var(--accent); border-radius:10px; padding:12px 20px; font-size:13px; font-weight:600; color:var(--accent); z-index:1000; transform:translateY(80px); opacity:0; transition:all 0.3s ease; box-shadow:var(--shadow-lg); }
+  .notify.show { transform:translateY(0); opacity:1; }
+
+  .action-bar { display:flex; gap:8px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); flex-wrap:wrap; }
+  .action-btn { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:7px 14px; font-family:var(--font-display); font-size:12px; font-weight:600; cursor:pointer; color:var(--text-light); transition:all 0.2s; display:inline-flex; align-items:center; gap:5px; box-shadow:var(--shadow-sm); }
+  .action-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .action-btn.copied { border-color:var(--green); color:var(--green); }
+
+  .history-item { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 18px; margin-bottom:10px; cursor:pointer; transition:all 0.2s; box-shadow:var(--shadow-sm); }
+  .history-item:hover { border-color:var(--accent); box-shadow:var(--shadow-md); }
+  .history-meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px; }
+  .history-type { font-family:var(--font-mono); font-size:11px; color:var(--accent); text-transform:uppercase; letter-spacing:1px; background:rgba(240,165,0,0.1); padding:2px 8px; border-radius:4px; }
+  .history-date { font-family:var(--font-mono); font-size:11px; color:var(--muted); }
+  .history-preview { font-size:13px; color:var(--muted); line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .history-empty { text-align:center; padding:40px; color:var(--muted); font-size:14px; }
+  .history-actions { display:flex; gap:8px; margin-bottom:16px; }
+  .history-clear { background:transparent; border:1px solid var(--red); border-radius:8px; padding:7px 14px; font-family:var(--font-display); font-size:12px; font-weight:600; cursor:pointer; color:var(--red); transition:all 0.2s; }
+  .history-clear:hover { background:rgba(239,68,68,0.1); }
+  .history-count { font-family:var(--font-mono); font-size:12px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+
+  .quick-action { display:inline-flex; align-items:center; gap:4px; background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:4px 10px; font-size:11px; font-weight:600; cursor:pointer; color:var(--accent); transition:all 0.2s; margin:2px 4px 2px 0; }
+  .quick-action:hover { background:var(--accent); color:#fff; }
+
+  ::-webkit-scrollbar{width:6px;height:6px} ::-webkit-scrollbar-track{background:var(--surface2)} ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">📡</div>
+      <div class="logo-text">
+        <h1 data-i18n="title"></h1>
+        <span data-i18n="subtitle"></span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="lang-switch">
+        <button class="lang-btn" id="btn-uk" onclick="setLang('uk')">🇺🇦 УКР</button>
+        <button class="lang-btn" id="btn-en" onclick="setLang('en')">🇺🇸 ENG</button>
+      </div>
+      <div class="status-bar">
+        <div class="dot-live"></div>
+        <span id="statusText"></span>
+      </div>
+    </div>
+  </header>
+
+  <div class="api-section">
+    <span class="api-label">🔑 Claude AI</span>
+    <input type="password" class="api-input" id="apiKey" placeholder="sk-ant-..." />
+    <button class="api-save" onclick="saveKey()" data-i18n="saveKey"></button>
+  </div>
+  <div class="api-section" style="flex-wrap:wrap;">
+    <span class="api-label" style="color:var(--green);">📊 Keepa</span>
+    <input type="password" class="api-input" id="keepaKey" placeholder="Keepa API key..." style="flex:1;min-width:180px;" />
+    <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:200px;">
+      <span style="font-size:10px;color:var(--muted);white-space:nowrap;">PROXY:</span>
+      <input type="text" class="api-input" id="keepaProxy" placeholder="https://ваш-worker.workers.dev/keepa/" style="flex:1;font-size:11px;" />
+    </div>
+    <button class="api-save" onclick="saveKeepaKey()" data-i18n="saveKey"></button>
+    <span id="keepaStatus" style="font-family:var(--font-mono);font-size:11px;color:var(--muted);white-space:nowrap;"></span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('scan',this)"><span>🔥</span><span data-i18n="tab1"></span></button>
+    <button class="tab" onclick="switchTab('niche',this)"><span>🎯</span><span data-i18n="tab2"></span></button>
+    <button class="tab" onclick="switchTab('supplier',this)"><span>📦</span><span data-i18n="tab3"></span></button>
+    <button class="tab" onclick="switchTab('auctions',this)"><span>🏛️</span><span data-i18n="tab4"></span></button>
+    <button class="tab" onclick="switchTab('history',this)"><span>📋</span><span data-i18n="tab5"></span></button>
+  </div>
+
+  <!-- Trend Scanner -->
+  <div class="panel active" id="panel-scan">
+    <div class="card">
+      <div class="card-title">🔥 <span data-i18n="scan_title"></span></div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;" data-i18n="scan_desc"></p>
+      <div class="scan-grid">
+        <div class="form-group">
+          <label data-i18n="lbl_market"></label>
+          <select class="form-select" id="scanMarket">
+            <option value="usa" data-i18n="mkt_usa"></option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label data-i18n="lbl_category"></label>
+          <select class="form-select" id="scanCategory">
+            <option value="all" data-i18n="cat_all"></option>
+            <optgroup label="🏠 Home & Kitchen">
+              <option value="Home & Kitchen">Home & Kitchen (general)</option>
+              <option value="Kitchen & Dining">Kitchen & Dining</option>
+              <option value="Cookware">Cookware & Bakeware</option>
+              <option value="Small Kitchen Appliances">Small Kitchen Appliances</option>
+              <option value="Bedding">Bedding & Pillows</option>
+              <option value="Bath">Bath & Towels</option>
+              <option value="Storage & Organization">Storage & Organization</option>
+              <option value="Lighting & Ceiling Fans">Lighting & Ceiling Fans</option>
+              <option value="Rugs">Rugs & Carpets</option>
+              <option value="Wall Art & Decor">Wall Art & Decor</option>
+              <option value="Furniture">Furniture</option>
+            </optgroup>
+            <optgroup label="🖥️ Appliances">
+              <option value="Appliances">Large Appliances (general)</option>
+              <option value="Refrigerators">Refrigerators & Freezers</option>
+              <option value="Washers & Dryers">Washers & Dryers</option>
+              <option value="Dishwashers">Dishwashers</option>
+            </optgroup>
+            <optgroup label="🌿 Patio, Lawn & Garden">
+              <option value="Patio, Lawn & Garden">Garden (general)</option>
+              <option value="Gardening Tools & Supplies">Gardening Tools & Supplies</option>
+              <option value="Outdoor Furniture & Decor">Outdoor Furniture & Decor</option>
+              <option value="Grills & Outdoor Cooking">Grills & Outdoor Cooking</option>
+              <option value="Plants, Seeds & Bulbs">Plants, Seeds & Bulbs</option>
+              <option value="Pest Control">Pest Control</option>
+              <option value="Watering Equipment">Watering Equipment</option>
+            </optgroup>
+            <optgroup label="💄 Beauty & Personal Care">
+              <option value="Beauty & Personal Care">Beauty (general)</option>
+              <option value="Skin Care">Skin Care</option>
+              <option value="Hair Care">Hair Care</option>
+              <option value="Makeup & Cosmetics">Makeup & Cosmetics</option>
+              <option value="Fragrance">Fragrance & Perfume</option>
+              <option value="Nail Care">Nail Care</option>
+              <option value="Shaving & Grooming">Shaving & Grooming</option>
+              <option value="Oral Care">Oral Care</option>
+              <option value="Luxury Beauty">🔒 Luxury Beauty (requires approval)</option>
+            </optgroup>
+            <optgroup label="🏥 Health & Household">
+              <option value="Health & Household">Health (general)</option>
+              <option value="Vitamins & Dietary Supplements">🔒 Vitamins & Supplements (requires approval)</option>
+              <option value="Medical Supplies & Equipment">Medical Supplies</option>
+              <option value="Personal Care Appliances">Personal Care Appliances</option>
+              <option value="Vision Care">Vision Care</option>
+              <option value="Household Cleaning Supplies">Cleaning Supplies</option>
+              <option value="Sexual Wellness">🔒 Sexual Wellness (restricted)</option>
+            </optgroup>
+            <optgroup label="👶 Baby">
+              <option value="Baby">Baby (general)</option>
+              <option value="Baby Clothing & Shoes">Baby Clothing & Shoes</option>
+              <option value="Diapering">Diapering</option>
+              <option value="Baby Feeding">Baby Feeding</option>
+              <option value="Baby Gear">Baby Gear (strollers, carriers)</option>
+              <option value="Nursery Furniture & Decor">Nursery</option>
+              <option value="Baby Safety">Baby Safety</option>
+            </optgroup>
+            <optgroup label="🐾 Pet Supplies">
+              <option value="Pet Supplies">Pet Supplies (general)</option>
+              <option value="Dog Supplies">Dog Supplies</option>
+              <option value="Cat Supplies">Cat Supplies</option>
+              <option value="Fish & Aquatic Pets">Fish & Aquatics</option>
+              <option value="Bird Supplies">Bird Supplies</option>
+              <option value="Small Animal Supplies">Small Animal Supplies</option>
+              <option value="Reptile & Amphibian Supplies">Reptile Supplies</option>
+            </optgroup>
+            <optgroup label="🏋️ Sports & Outdoors">
+              <option value="Sports & Outdoors">Sports (general)</option>
+              <option value="Exercise & Fitness Equipment">Exercise & Fitness Equipment</option>
+              <option value="Yoga & Pilates">Yoga & Pilates</option>
+              <option value="Outdoor Recreation">Outdoor Recreation</option>
+              <option value="Cycling">Cycling</option>
+              <option value="Water Sports">Water Sports</option>
+              <option value="Hunting & Fishing">Hunting & Fishing</option>
+              <option value="Golf Equipment">Golf</option>
+              <option value="Team Sports Equipment">Team Sports</option>
+              <option value="Running & Jogging">Running & Jogging</option>
+            </optgroup>
+            <optgroup label="🧸 Toys & Games">
+              <option value="Toys & Games">Toys & Games (general)</option>
+              <option value="Action Figures & Statues">Action Figures</option>
+              <option value="Board Games">Board Games</option>
+              <option value="Building Toys">Building Toys (construction sets)</option>
+              <option value="Dolls & Accessories">Dolls & Accessories</option>
+              <option value="Educational Toys">Educational Toys</option>
+              <option value="Outdoor Play Equipment">Outdoor Play</option>
+              <option value="Puzzles">Puzzles</option>
+              <option value="Stuffed Animals & Plush">Stuffed Animals</option>
+            </optgroup>
+            <optgroup label="👕 Clothing, Shoes & Jewelry">
+              <option value="Men's Clothing">Men's Clothing</option>
+              <option value="Women's Clothing">Women's Clothing</option>
+              <option value="Girls Clothing">Girls Clothing</option>
+              <option value="Boys Clothing">Boys Clothing</option>
+              <option value="Shoes & Boots">Shoes & Boots</option>
+              <option value="Handbags & Wallets">Handbags & Wallets</option>
+              <option value="Jewelry">🔒 Jewelry (requires approval)</option>
+              <option value="Watches">🔒 Watches (requires approval)</option>
+              <option value="Sunglasses">Sunglasses & Eyewear</option>
+              <option value="Luggage & Travel Gear">Luggage & Travel</option>
+            </optgroup>
+            <optgroup label="📱 Electronics">
+              <option value="Electronics">Electronics (general)</option>
+              <option value="Cell Phones & Accessories">Cell Phones & Accessories</option>
+              <option value="Headphones & Earbuds">Headphones & Earbuds</option>
+              <option value="Camera & Photo">Camera & Photo</option>
+              <option value="TV & Video">TV & Home Theater</option>
+              <option value="Smart Home Devices">Smart Home</option>
+              <option value="Wearable Technology">Wearable Technology</option>
+              <option value="Computer Accessories & Peripherals">Computer Accessories</option>
+              <option value="Tablets & Accessories">Tablets & Accessories</option>
+              <option value="Portable Audio & Speakers">Portable Audio</option>
+              <option value="Amazon Devices & Accessories">Amazon Devices</option>
+              <option value="Video Games">🔒 Video Games & Consoles (requires approval)</option>
+              <option value="Networking Equipment">Networking Equipment (Cisco, switches, routers)</option>
+              <option value="VoIP & Telecommunications">VoIP & Telecommunications (Polycom, IP phones)</option>
+            </optgroup>
+            <optgroup label="🔧 Tools & Home Improvement">
+              <option value="Tools & Home Improvement">Tools (general)</option>
+              <option value="Power Tools">Power Tools</option>
+              <option value="Hand Tools">Hand Tools</option>
+              <option value="Electrical Equipment">Electrical</option>
+              <option value="Plumbing">Plumbing</option>
+              <option value="Paint & Painting Supplies">Paint & Supplies</option>
+              <option value="Safety & Security">Safety & Security</option>
+            </optgroup>
+            <optgroup label="🚗 Automotive">
+              <option value="Automotive">Automotive (general)</option>
+              <option value="Car Electronics & GPS">Car Electronics & GPS</option>
+              <option value="Car Care Products">Car Care</option>
+              <option value="Interior Accessories">Interior Accessories</option>
+              <option value="Exterior Accessories">Exterior Accessories</option>
+              <option value="Motorcycle & Powersports">Motorcycle Accessories</option>
+              <option value="Tires & Wheels">⚠️ Tires & Wheels (safety cert required)</option>
+              <option value="Truck Accessories">Truck Accessories</option>
+            </optgroup>
+            <optgroup label="🍎 Grocery & Gourmet Food">
+              <option value="Grocery & Gourmet Food">🔒 Grocery (general, requires approval)</option>
+              <option value="Snack Foods">🔒 Snack Foods (requires approval)</option>
+              <option value="Beverages">🔒 Beverages (requires approval)</option>
+              <option value="Organic Food">🔒 Organic & Natural Food (requires approval)</option>
+              <option value="Coffee & Tea">🔒 Coffee & Tea (requires approval)</option>
+              <option value="Protein & Fitness Nutrition">Protein & Sports Nutrition</option>
+              <option value="Candy & Chocolate">🔒 Candy & Chocolate (requires approval)</option>
+              <option value="Specialty & Gourmet Foods">Specialty & Gourmet Foods</option>
+            </optgroup>
+            <optgroup label="📚 Books & Media">
+              <option value="Books">Books (physical)</option>
+              <option value="Textbooks">Textbooks (physical)</option>
+              <option value="Movies & TV">Movies & TV (physical DVD/Blu-ray)</option>
+              <option value="Music">Music (physical CDs/Vinyl)</option>
+            </optgroup>
+            <optgroup label="🎨 Arts, Crafts & Hobbies">
+              <option value="Arts, Crafts & Sewing">Arts, Crafts & Sewing</option>
+              <option value="Craft Supplies & Materials">Craft Supplies</option>
+              <option value="Sewing & Quilting">Sewing & Quilting</option>
+              <option value="Drawing & Painting Supplies">Drawing & Painting</option>
+              <option value="Musical Instruments & Accessories">Musical Instruments</option>
+              <option value="Collectibles & Fine Art">🔒 Collectibles & Fine Art (requires approval)</option>
+            </optgroup>
+            <optgroup label="🏢 Office Products">
+              <option value="Office Products">Office Products (general)</option>
+              <option value="Office Electronics">Office Electronics</option>
+              <option value="Office Furniture & Lighting">Office Furniture</option>
+              <option value="School & Office Supplies">School & Office Supplies</option>
+              <option value="Printer Ink & Toner">Printer Ink & Toner</option>
+            </optgroup>
+            <optgroup label="🔬 Industrial & Scientific">
+              <option value="Industrial & Scientific">Industrial (general)</option>
+              <option value="Lab & Scientific Products">Lab & Scientific</option>
+              <option value="Professional Medical Supplies">Professional Medical</option>
+              <option value="Janitorial & Sanitation">Janitorial & Sanitation</option>
+              <option value="Packaging & Shipping Supplies">Packaging Supplies</option>
+            </optgroup>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label data-i18n="lbl_budget"></label>
+        <select class="form-select" id="scanBudget">
+          <option value="0-100">$0 – $100</option>
+          <option value="100-500">$100 – $500</option>
+          <option value="500-1000">$500 – $1,000</option>
+          <option value="1000-5000">$1,000 – $5,000</option>
+          <option value="5000+">$5,000+</option>
+        </select>
+      </div>
+      <div style="margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text);">
+          <input type="checkbox" id="openOnlyFilter" checked style="width:18px;height:18px;accent-color:var(--accent);" />
+          <span>🟢</span> <span data-i18n="filter_open"></span>
+        </label>
+      </div>
+      <button class="btn-primary" id="scanBtn" onclick="runScan()">📡 <span data-i18n="btn_scan"></span></button>
+    </div>
+    <div class="response-area" id="scan-response"></div>
+  </div>
+
+  <!-- Niche Analyzer -->
+  <div class="panel" id="panel-niche">
+    <div class="card">
+      <div class="card-title">🎯 <span data-i18n="niche_title"></span></div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;" data-i18n="niche_desc"></p>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label data-i18n="lbl_niche_input"></label>
+        <input type="text" class="form-input" id="nicheInput" data-i18n-ph="ph_niche" />
+      </div>
+      <div class="scan-grid" style="margin-bottom:16px;">
+        <div class="form-group">
+          <label data-i18n="lbl_market"></label>
+          <select class="form-select" id="nicheMarket">
+            <option value="usa" data-i18n="mkt_usa_s"></option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label data-i18n="lbl_model"></label>
+          <select class="form-select" id="nicheModel">
+            <option value="wholesale">Wholesale</option>
+            <option value="arbitrage">Retail / Online Arbitrage</option>
+            <option value="private_label">Private Label</option>
+            <option value="any" data-i18n="model_any"></option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-primary" id="nicheBtn" onclick="analyzeNiche()">🔍 <span data-i18n="btn_niche"></span></button>
+    </div>
+    <div class="response-area" id="niche-response"></div>
+  </div>
+
+  <!-- Supplier Finder -->
+  <div class="panel" id="panel-supplier">
+    <div class="card">
+      <div class="card-title">📦 <span data-i18n="sup_title"></span></div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;" data-i18n="sup_desc"></p>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label data-i18n="lbl_sup_input"></label>
+        <input type="text" class="form-input" id="supplierInput" data-i18n-ph="ph_supplier"/>
+      </div>
+      <div class="scan-grid" style="margin-bottom:16px;">
+        <div class="form-group">
+          <label data-i18n="lbl_source_model"></label>
+          <select class="form-select" id="sourcingModel">
+            <option value="wholesale" data-i18n="src_wholesale"></option>
+            <option value="amazon" data-i18n="src_amazon"></option>
+            <option value="ebay" data-i18n="src_ebay"></option>
+            <option value="alibaba">Alibaba / China</option>
+            <option value="temu">Temu</option>
+            <option value="arbitrage" data-i18n="src_arbitrage"></option>
+            <option value="all" data-i18n="src_all"></option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label data-i18n="lbl_min_budget"></label>
+          <select class="form-select" id="supplierBudget">
+            <option value="0-100">$0 – $100</option>
+            <option value="100-500">$100 – $500</option>
+            <option value="500-1000">$500 – $1,000</option>
+            <option value="1000-5000">$1,000 – $5,000</option>
+            <option value="5000+">$5,000+</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-primary" id="supplierBtn" onclick="findSuppliers()">🔎 <span data-i18n="btn_supplier"></span></button>
+    </div>
+    <div class="response-area" id="supplier-response"></div>
+  </div>
+
+  <!-- Government Auctions & Liquidation -->
+  <div class="panel" id="panel-auctions">
+    <div class="card">
+      <div class="card-title">🏛️ <span data-i18n="auc_title"></span></div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;" data-i18n="auc_desc"></p>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label data-i18n="lbl_auc_input"></label>
+        <input type="text" class="form-input" id="auctionInput" data-i18n-ph="ph_auction" />
+      </div>
+      <div class="scan-grid" style="margin-bottom:16px;">
+        <div class="form-group">
+          <label data-i18n="lbl_auc_type"></label>
+          <select class="form-select" id="auctionType">
+            <option value="all" data-i18n="auc_all"></option>
+            <option value="electronics" data-i18n="auc_electronics"></option>
+            <option value="computers" data-i18n="auc_computers"></option>
+            <option value="office" data-i18n="auc_office"></option>
+            <option value="vehicles" data-i18n="auc_vehicles"></option>
+            <option value="industrial" data-i18n="auc_industrial"></option>
+            <option value="furniture" data-i18n="auc_furniture"></option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label data-i18n="lbl_auc_budget"></label>
+          <select class="form-select" id="auctionBudget">
+            <option value="0-500">$0 – $500</option>
+            <option value="500-2000">$500 – $2,000</option>
+            <option value="2000-10000">$2,000 – $10,000</option>
+            <option value="10000+">$10,000+</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;" data-i18n="auc_quick_label"></div>
+        <div class="quick-chips">
+          <span class="chip" onclick="quickAuction('electronics')" data-i18n="auc_chip1"></span>
+          <span class="chip" onclick="quickAuction('cisco')" data-i18n="auc_chip2"></span>
+          <span class="chip" onclick="quickAuction('laptops')" data-i18n="auc_chip3"></span>
+          <span class="chip" onclick="quickAuction('pallets')" data-i18n="auc_chip4"></span>
+        </div>
+      </div>
+      <button class="btn-primary" id="auctionBtn" onclick="searchAuctions()">🏛️ <span data-i18n="btn_auction"></span></button>
+    </div>
+    <div class="response-area" id="auction-response"></div>
+  </div>
+
+  <!-- History -->
+  <div class="panel" id="panel-history">
+    <div class="card">
+      <div class="card-title">📋 <span data-i18n="hist_title"></span></div>
+      <div class="history-actions">
+        <div class="history-count"><span id="historyCount">0</span> <span data-i18n="hist_records"></span></div>
+        <button class="history-clear" onclick="clearHistory()" data-i18n="hist_clear"></button>
+      </div>
+      <div id="historyList"></div>
+    </div>
+  </div>
+
+</div>
+<div class="notify" id="notify"></div>
+
+<script>
+const T = {
+  uk: {
+    title:'Машина ринкової розвідки', subtitle:'Amazon USA · eBay · Temu · Аукціони · На базі ШІ',
+    s_ready:'Готово', s_scan:'🔍 Сканування...', s_done:'✅ Готово', s_err:'❌ Помилка',
+    saveKey:'Зберегти ключ',
+    tab1:'Сканер трендів', tab2:'Аналіз ніші', tab3:'Постачальники', tab4:'Держ. аукціони', tab5:'Історія',
+    scan_title:'Мультиплатформний сканер трендів',
+    scan_desc:'ШІ сканує Amazon USA, eBay, Temu та інші платформи прямо зараз — знаходить товари з найвищим потенціалом.',
+    niche_title:'Аналіз ніші',
+    niche_desc:'Введи нішу — ШІ проаналізує попит, конкуренцію і ціни на Amazon USA, eBay та Temu одночасно.',
+    sup_title:'Пошук постачальників',
+    sup_desc:'ШІ сканує Alibaba, eBay лоти, Temu, Walmart, держ. аукціони та оптовиків — знаходить найдешевше.',
+    auc_title:'Державні аукціони та ліквідація',
+    auc_desc:'ШІ сканує GovDeals, GovPlanet, GSA Auctions, Liquidation.com та інші платформи з ліквідаційним товаром від держустанов і корпорацій.',
+    lbl_auc_input:'Що шукаєш?', lbl_auc_type:'Тип товару', lbl_auc_budget:'Бюджет',
+    auc_all:'Все', auc_electronics:'Електроніка', auc_computers:'Комп\'ютери та мережеве обладнання',
+    auc_office:'Офісна техніка', auc_vehicles:'Транспорт', auc_industrial:'Промислове обладнання', auc_furniture:'Меблі та інвентар',
+    auc_quick_label:'Швидкий пошук',
+    auc_chip1:'📱 Електроніка', auc_chip2:'🖧 Cisco / Мережеве', auc_chip3:'💻 Ноутбуки палети', auc_chip4:'📦 Ліквідаційні палети',
+    btn_auction:'Сканувати аукціони',
+    ph_auction:'напр. Cisco switches, Apple MacBook, офісні меблі, палети з електронікою...',
+    lbl_market:'Маркетплейс', lbl_category:'Категорія (необов\'язково)', lbl_budget:'Бюджет',
+    lbl_niche_input:'Ніша або ідея товару', lbl_model:'Модель роботи',
+    lbl_cmp_input:'Товар або категорія',
+    lbl_sup_input:'Товар або категорія',
+    lbl_source_model:'Модель постачання', lbl_min_budget:'Мінімальний бюджет',
+    mkt_usa:'Amazon USA', mkt_usa_s:'Amazon USA',
+    cat_all:'Всі категорії',
+    model_any:'Будь-яка модель',
+    src_wholesale:'Wholesale (бренди США)', src_amazon:'Amazon (Warehouse, мультипаки)', src_ebay:'eBay (лоти, bulk, рефарб)', src_arbitrage:'Retail Arbitrage магазини', src_all:'Всі платформи',
+    quick_label:'Швидке сканування',
+    chip1:'🔥 Що в тренді зараз', chip2:'💵 Хіти до $50', chip3:'🎯 Мала конкуренція',
+    chip4:'🖥️ Офісна техніка / IT', chip5:'📦 eBay лоти', chip6:'🌿 Сезонні товари',
+    filter_open:'Тільки відкриті лістинги (без gated брендів, без інвойсу)',
+    btn_scan:'Сканувати ринок', btn_niche:'Аналізувати нішу',
+    btn_supplier:'Знайти постачальників',
+    ph_niche:'напр. силіконові інструменти, добавки для собак...',
+    ph_supplier:'напр. корм для собак, LED стрічки, кухонні гаджети...',
+    n_saved:'✅ Ключ збережено!', n_empty:'⚠️ Введи API ключ спочатку',
+    n_loaded:'✅ API ключ завантажено', n_fill:'⚠️ Заповни поле',
+    loading:'ШІ сканує Amazon, eBay, Temu та аукціони...', ai_lang:'Ukrainian',
+    hist_title:'Історія сканувань', hist_records:'записів', hist_clear:'Очистити історію',
+    hist_empty:'Історія порожня. Результати сканувань з\'являться тут автоматично.',
+    hist_confirm:'Видалити всю історію?',
+    act_copy:'Копіювати', act_csv:'Експорт CSV', act_copied:'Скопійовано!',
+    qa_supplier:'📦 Постачальники', qa_auction:'🏛️ Аукціони',
+    hist_scan:'Сканер', hist_niche:'Ніша', hist_supplier:'Постачальники', hist_auction:'Аукціони'
+  },
+  en: {
+    title:'Market Intelligence Machine', subtitle:'Amazon USA · eBay · Temu · Auctions · AI-Powered',
+    s_ready:'Ready', s_scan:'🔍 Scanning...', s_done:'✅ Done', s_err:'❌ Error',
+    saveKey:'Save Key',
+    tab1:'Trend Scanner', tab2:'Niche Analyzer', tab3:'Supplier Finder', tab4:'Gov Auctions', tab5:'History',
+    scan_title:'Multi-Platform Trend Scanner',
+    scan_desc:'AI scans Amazon USA, eBay, Temu and more right now — finds products with highest potential.',
+    niche_title:'Niche Analyzer',
+    niche_desc:'Enter any niche — AI analyzes demand, competition and prices across Amazon USA, eBay and Temu simultaneously.',
+    sup_title:'Supplier & Sourcing Finder',
+    sup_desc:'AI scans Alibaba, eBay lots, Temu, Walmart, gov auctions and wholesalers — finds cheapest source.',
+    auc_title:'Government Auctions & Liquidation',
+    auc_desc:'AI scans GovDeals, GovPlanet, GSA Auctions, Liquidation.com and other platforms selling surplus from government agencies and corporations.',
+    lbl_auc_input:'What are you looking for?', lbl_auc_type:'Product type', lbl_auc_budget:'Budget',
+    auc_all:'All types', auc_electronics:'Electronics', auc_computers:'Computers & Networking',
+    auc_office:'Office Equipment', auc_vehicles:'Vehicles', auc_industrial:'Industrial Equipment', auc_furniture:'Furniture & Fixtures',
+    auc_quick_label:'Quick Search',
+    auc_chip1:'📱 Electronics', auc_chip2:'🖧 Cisco / Networking', auc_chip3:'💻 Laptop Pallets', auc_chip4:'📦 Liquidation Pallets',
+    btn_auction:'Scan Auctions',
+    ph_auction:'e.g. Cisco switches, Apple MacBook, office furniture, electronics pallets...',
+    lbl_market:'Marketplace', lbl_category:'Category (optional)', lbl_budget:'Budget Range',
+    lbl_niche_input:'Niche or Product Idea', lbl_model:'Your Model',
+    lbl_cmp_input:'Product or Category to Compare',
+    lbl_sup_input:'Product or Category',
+    lbl_source_model:'Sourcing Model', lbl_min_budget:'Min Order Budget',
+    mkt_usa:'Amazon USA', mkt_usa_s:'Amazon USA',
+    cat_all:'All Categories',
+    model_any:'Any model',
+    src_wholesale:'Wholesale (USA brands)', src_amazon:'Amazon (Warehouse, bundles)', src_ebay:'eBay (lots, bulk, refurb)', src_arbitrage:'Retail Arbitrage stores', src_all:'All platforms',
+    quick_label:'Quick Scan',
+    chip1:'🔥 What\'s Trending Now', chip2:'💵 Under $50 Best Sellers', chip3:'🎯 Low Competition',
+    chip4:'🖥️ Office & IT Equipment', chip5:'📦 eBay Lots', chip6:'🌿 Seasonal Products',
+    filter_open:'Open listings only (no gated brands, no invoice needed)',
+    btn_scan:'Scan Market Now', btn_niche:'Analyze This Niche',
+    btn_supplier:'Find Suppliers',
+    ph_niche:'e.g. silicone kitchen tools, dog supplements...',
+    ph_supplier:'e.g. dog treats, LED light strips, kitchen gadgets...',
+    n_saved:'✅ API key saved!', n_empty:'⚠️ Enter your API key first',
+    n_loaded:'✅ API key loaded', n_fill:'⚠️ Please fill in the field',
+    loading:'AI is scanning Amazon, eBay, Temu and auctions...', ai_lang:'English',
+    hist_title:'Scan History', hist_records:'records', hist_clear:'Clear History',
+    hist_empty:'History is empty. Scan results will appear here automatically.',
+    hist_confirm:'Delete all history?',
+    act_copy:'Copy', act_csv:'Export CSV', act_copied:'Copied!',
+    qa_supplier:'📦 Suppliers', qa_auction:'🏛️ Auctions',
+    hist_scan:'Scanner', hist_niche:'Niche', hist_supplier:'Suppliers', hist_auction:'Auctions'
+  }
+};
+
+let LANG = localStorage.getItem('mim_lang') || 'uk';
+let API_KEY = '';
+let KEEPA_KEY = '';
+let KEEPA_PROXY = '';
+
+function t(k){ return T[LANG][k] || T.en[k] || k; }
+
+function applyTranslations(){
+  document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = t(el.dataset.i18n));
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => el.placeholder = t(el.dataset.i18nPh));
+  document.getElementById('statusText').textContent = t('s_ready');
+  document.getElementById('btn-uk').classList.toggle('active', LANG==='uk');
+  document.getElementById('btn-en').classList.toggle('active', LANG==='en');
+}
+
+function setLang(lang){ LANG=lang; localStorage.setItem('mim_lang',lang); applyTranslations(); }
+
+window.onload = () => {
+  applyTranslations();
+  const saved = localStorage.getItem('mim_api_key');
+  if(saved){ API_KEY=saved; document.getElementById('apiKey').value=saved; }
+  const keepaSaved = localStorage.getItem('mim_keepa_key');
+  if(keepaSaved){ KEEPA_KEY=keepaSaved; document.getElementById('keepaKey').value=keepaSaved; }
+  const proxySaved = localStorage.getItem('mim_keepa_proxy');
+  if(proxySaved){ KEEPA_PROXY=proxySaved; document.getElementById('keepaProxy').value=proxySaved; }
+  updateKeepaStatus(!!keepaSaved);
+  updateMainStatus();
+  if(saved || keepaSaved) showNotify(t('n_loaded'));
+};
+
+function updateMainStatus(){
+  const el = document.getElementById('statusText');
+  if(API_KEY && KEEPA_KEY){
+    el.innerHTML = LANG==='uk'?'✅ Claude + Keepa':'✅ Claude + Keepa';
+  } else if(API_KEY){
+    el.innerHTML = LANG==='uk'?'🔑 Claude AI':'🔑 Claude AI';
+  } else if(KEEPA_KEY){
+    el.innerHTML = LANG==='uk'?'📊 Keepa':'📊 Keepa';
+  } else {
+    el.innerHTML = LANG==='uk'?'⚠️ Немає ключів':'⚠️ No keys';
+  }
+}
+
+function saveKey(){
+  const k=document.getElementById('apiKey').value.trim();
+  if(!k){showNotify(t('n_empty'));return;}
+  API_KEY=k; localStorage.setItem('mim_api_key',k); updateMainStatus(); showNotify(t('n_saved'));
+}
+
+function saveKeepaKey(){
+  const k=document.getElementById('keepaKey').value.trim();
+  const p=document.getElementById('keepaProxy').value.trim();
+  if(!k){showNotify(LANG==='uk'?'⚠️ Введи Keepa API ключ':'⚠️ Enter Keepa API key');return;}
+  KEEPA_KEY=k; localStorage.setItem('mim_keepa_key',k);
+  // Proxy is optional — save if provided
+  if(p){
+    KEEPA_PROXY = p.endsWith('/') ? p : p + '/';
+    if(!KEEPA_PROXY.endsWith('keepa/')) KEEPA_PROXY = KEEPA_PROXY + (KEEPA_PROXY.endsWith('/') ? 'keepa/' : '/keepa/');
+    localStorage.setItem('mim_keepa_proxy', KEEPA_PROXY);
+    document.getElementById('keepaProxy').value = KEEPA_PROXY;
+  } else {
+    KEEPA_PROXY = '';
+    localStorage.removeItem('mim_keepa_proxy');
+  }
+  updateKeepaStatus(true); updateMainStatus();
+  showNotify('✅ Keepa ' + t('n_saved'));
+}
+
+function updateKeepaStatus(connected){
+  const el = document.getElementById('keepaStatus');
+  if(KEEPA_KEY && KEEPA_PROXY){
+    el.innerHTML = '<span style="color:var(--green);">✅ Keepa + Proxy OK</span>';
+  } else if(KEEPA_KEY){
+    el.innerHTML = LANG==='uk' 
+      ? '<span style="color:var(--accent);">🔑 Ключ OK · <span style="font-size:10px;">⚠️ Proxy потрібен</span></span>' 
+      : '<span style="color:var(--accent);">🔑 Key OK · <span style="font-size:10px;">⚠️ Proxy needed</span></span>';
+  } else {
+    el.innerHTML = '';
+  }
+}
+
+function showNotify(msg){
+  const n=document.getElementById('notify'); n.textContent=msg; n.classList.add('show');
+  setTimeout(()=>n.classList.remove('show'),3000);
+}
+
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+}
+
+function setStatus(k){ document.getElementById('statusText').textContent=t(k); }
+
+function sys(){
+  return `You are an elite market intelligence analyst. You have web search access but NOT direct access to Amazon's database.
+
+HONESTY RULES — THIS IS THE MOST IMPORTANT SECTION:
+1. NEVER say a product is a "best seller", "top seller", or "trending" unless you found CURRENT BSR data from Amazon in THIS search session.
+2. For EVERY product you mention, you MUST show the DATA SOURCE:
+   - ✅ VERIFIED: "BSR #45 in Kitchen (source: Amazon.com, found in search)" — you actually found this data now
+   - 📰 FROM ARTICLE: "mentioned as trending in [article name], [date]" — you found it in a blog/article, NOT confirmed on Amazon
+   - ⚠️ ESTIMATED: "estimated based on review count and category" — your calculation, not confirmed
+   - ❌ NOT FOUND: "BSR not available in current search" — be honest when you can't find data
+3. NEVER present old article data as current Amazon rankings. If a blog from January says "top seller" — say "was mentioned as top seller in January article, current status unknown".
+4. If you cannot verify a product's current sales rank — SAY SO. Do not guess.
+5. Distinguish between: "this product EXISTS on Amazon" vs "this product SELLS WELL on Amazon" — these are very different claims.
+
+SEARCH RULES:
+1. Perform MULTIPLE web searches (3-5) before answering.
+2. Include "2026" or current month in searches for fresh results.
+3. Search Amazon best sellers pages, eBay, Temu, Google Shopping.
+4. For office/networking: search Cisco, Polycom, Dell, HP refurbished equipment.
+
+PRODUCT FORMAT:
+- EXACT product names with model numbers, part numbers
+- ASIN when found on Amazon
+- Price, BSR (with source!), reviews count
+- Where to buy cheapest
+- DIRECT LINKS — for EVERY product, include these clickable links:
+  🔗 [Amazon](https://www.amazon.com/s?k=PRODUCT+NAME) | [eBay](https://www.ebay.com/sch/i.html?_nkw=PRODUCT+NAME) | [GovDeals](https://www.govdeals.com/index.cfm?fa=Main.AdvSearchResultsNew&searchPg=Classic&kession=PRODUCT+NAME) | [Temu](https://www.temu.com/search_result.html?search_key=PRODUCT+NAME)
+  Replace PRODUCT+NAME with the actual product name using + for spaces. This is MANDATORY for every product.
+- SOURCING LINKS — when you mention Cheapest Source, ALWAYS add a clickable link:
+  [Alibaba](https://www.alibaba.com/trade/search?SearchText=PRODUCT+NAME) | [1688](https://s.1688.com/selloffer/offer_search.htm?keywords=PRODUCT+NAME) | [eBay Lots](https://www.ebay.com/sch/i.html?_nkw=PRODUCT+NAME+wholesale+lot) | [Walmart](https://www.walmart.com/search?q=PRODUCT+NAME) | [Liquidation](https://www.liquidation.com/aucSearch/index/query/PRODUCT+NAME)
+  Every "Cheapest Source" line MUST have a clickable link to that source.
+
+DATA QUALITY:
+- Every claim must cite its source (Amazon page, article title+date, eBay listing)
+- If data is from an article older than 30 days, mark it with ⚠️
+- NEVER fabricate BSR numbers, prices, or sales estimates
+- MARKET: Amazon USA only
+
+FORMAT: ## headers, ### sub-headers, **bold** for key data, tables.
+LANGUAGE: CRITICAL — Always respond in ${t('ai_lang')} language only.`;
+}
+
+async function callAI(prompt, resId, btnId, retryCount=0){
+  if(!API_KEY){
+    // If no Claude key but Keepa available, redirect to Keepa for scan
+    if(KEEPA_KEY && resId === 'scan-response'){
+      return runScan(); // runScan will use Keepa path
+    }
+    const res=document.getElementById(resId);
+    res.className='response-area visible';
+    const keepaHint = KEEPA_KEY 
+      ? (LANG==='uk'?'<br>💡 Keepa працює — використай вкладку "Сканер" для пошуку товарів.':'<br>💡 Keepa is active — use the "Scanner" tab for product search.')
+      : '';
+    res.innerHTML=`<div style="text-align:center;padding:20px;"><p>⚠️ ${LANG==='uk'?'Для цієї функції потрібен Claude AI ключ':'This feature requires Claude AI key'}</p><p style="margin-top:8px;"><a href="https://console.anthropic.com" target="_blank" style="color:var(--accent);">console.anthropic.com</a></p>${keepaHint}</div>`;
+    return;
+  }
+  const MAX_RETRIES = 3;
+  const btn=document.getElementById(btnId), res=document.getElementById(resId);
+  btn.disabled=true; setStatus('s_scan');
+  if(retryCount === 0){
+    res.className='response-area visible loading';
+    res.innerHTML=`<div class="spinner"></div><span>${t('loading')}</span>`;
+  }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 180000);
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      signal: controller.signal,
+      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:8192,
+        tools:[{type:'web_search_20250305',name:'web_search'}],
+        system:sys(),messages:[{role:'user',content:prompt}]})
+    });
+    clearTimeout(timeout);
+    const data=await r.json();
+    if(data.error){
+      const etype = data.error.type || '';
+      // Auth error = key invalid or no money
+      if(etype === 'authentication_error' || (etype === 'invalid_request_error' && (data.error.message||'').includes('credit'))){
+        // If Keepa available, show a useful combined message
+        const keepaMsg = KEEPA_KEY 
+          ? (LANG==='uk'?'<br><br>💡 <strong>Keepa працює!</strong> Використай вкладку "Сканер" для пошуку товарів з реальними даними.':'<br><br>💡 <strong>Keepa is active!</strong> Use the "Scanner" tab for real product data.')
+          : '';
+        throw new Error((LANG==='uk'?'🔑 Claude API: ключ невалідний або закінчились кошти.<br><a href="https://console.anthropic.com" target="_blank" style="color:var(--accent);">Поповнити на console.anthropic.com</a>':'🔑 Claude API: key invalid or out of credits.<br><a href="https://console.anthropic.com" target="_blank" style="color:var(--accent);">Top up at console.anthropic.com</a>') + keepaMsg);
+      }
+      if((etype === 'rate_limit_error' || etype === 'overloaded_error') && retryCount < MAX_RETRIES){
+        const waitSec = etype === 'rate_limit_error' ? 60 : 30;
+        await countdown(res, waitSec, retryCount+1, MAX_RETRIES);
+        return callAI(prompt, resId, btnId, retryCount+1);
+      }
+      if(etype === 'rate_limit_error') throw new Error(LANG==='uk'?'⏳ Ліміт запитів перевищено після 3 спроб. Зачекай кілька хвилин.':'⏳ Rate limit exceeded after 3 retries. Wait a few minutes.');
+      if(etype === 'overloaded_error') throw new Error(LANG==='uk'?'🔄 API перевантажене після 3 спроб. Спробуй пізніше.':'🔄 API overloaded after 3 retries. Try later.');
+      throw new Error(data.error.message);
+    }
+    const text=data.content.filter(b=>b.type==='text').map(b=>b.text).join('\n');
+    if(!text.trim()) throw new Error(LANG==='uk'?'ШІ не повернув текстової відповіді. Спробуй ще раз.':'AI returned no text response. Try again.');
+    const formatted = fmt(text);
+    const withActions = addQuickActions(formatted);
+    res.className='response-area visible';
+    res.innerHTML='<div class="response-content">'+withActions+'</div>' + buildActionBar(resId, text);
+    saveToHistory(resId, prompt, text);
+    setStatus('s_done');
+  }catch(e){
+    clearTimeout(timeout);
+    res.className='response-area visible';
+    const msg = e.name==='AbortError' ? (LANG==='uk'?'⏱️ Час очікування вичерпано. Спробуй ще раз.':'⏱️ Request timed out. Please try again.') : e.message;
+    res.innerHTML=`<div style="text-align:center;padding:16px;"><span style="color:var(--red)">${msg}</span></div>`;
+    setStatus('s_err');
+  }finally{ btn.disabled=false; }
+}
+
+function countdown(res, seconds, attempt, maxAttempts){
+  return new Promise(resolve => {
+    let remaining = seconds;
+    const label = LANG==='uk'
+      ? `⏳ Ліміт API — автоматичне повторення через`
+      : `⏳ API rate limit — auto-retry in`;
+    const attemptLabel = LANG==='uk' ? 'Спроба' : 'Attempt';
+    const update = () => {
+      res.className='response-area visible loading';
+      res.innerHTML=`<div class="spinner"></div><span>${label} <strong>${remaining}</strong>с... (${attemptLabel} ${attempt}/${maxAttempts})</span>`;
+      if(remaining <= 0){ resolve(); return; }
+      remaining--;
+      setTimeout(update, 1000);
+    };
+    update();
+  });
+}
+
+function fmt(text){
+  let html = text
+    .replace(/^#### (.+)$/gm,'<h3 style="font-size:14px;">$1</h3>')
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;font-weight:600;">$1</a>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/^- (.+)$/gm,'<li>$1</li>')
+    .replace(/^\d+\.\s+(.+)$/gm,'<li class="ol-item">$1</li>')
+    .replace(/\n\n/g,'</p><p>');
+  // Group consecutive <li> into <ul>
+  html = html.replace(/((?:<li>.*?<\/li>\n?)+)/g, (match) => {
+    if(!match.includes('ol-item')) return '<ul>' + match + '</ul>';
+    return '<ol>' + match.replace(/class="ol-item"/g,'') + '</ol>';
+  });
+  // Simple table support: | col | col |
+  html = html.replace(/((?:^\|.+\|$\n?)+)/gm, (tableBlock) => {
+    const rows = tableBlock.trim().split('\n').filter(r => !r.match(/^\|[\s\-\|]+\|$/));
+    if(rows.length < 1) return tableBlock;
+    let table = '<table style="width:100%;border-collapse:collapse;margin:12px 0;font-size:13px;">';
+    rows.forEach((row, i) => {
+      const cells = row.split('|').filter(c => c.trim());
+      const tag = i===0 ? 'th' : 'td';
+      const style = i===0 ? 'style="border-bottom:2px solid var(--accent);padding:8px;text-align:left;color:var(--accent);font-weight:700;"' : 'style="border-bottom:1px solid var(--border);padding:8px;"';
+      table += '<tr>' + cells.map(c => `<${tag} ${style}>${c.trim()}</${tag}>`).join('') + '</tr>';
+    });
+    return table + '</table>';
+  });
+  return html;
+}
+
+async function runScan(){
+  const cat = document.getElementById('scanCategory').value;
+  const budget = document.getElementById('scanBudget').value;
+  const btn = document.getElementById('scanBtn');
+  const res = document.getElementById('scan-response');
+
+  // No keys at all
+  if(!API_KEY && !KEEPA_KEY){
+    showNotify(LANG==='uk'?'⚠️ Встав хоча б один ключ':'⚠️ Enter at least one key');
+    return;
+  }
+
+  btn.disabled = true;
+  setStatus('s_scan');
+
+  // === PATH A: TRY KEEPA (if key exists) ===
+  if(KEEPA_KEY){
+    res.className = 'response-area visible loading';
+    res.innerHTML = `<div class="spinner"></div><span>${LANG==='uk'?'📊 Keepa: пошук актуальних товарів...':'📊 Keepa: finding current products...'}</span>`;
+
+    try {
+      const catName = cat === 'all' ? 'Home & Kitchen' : cat;
+      const catId = KEEPA_CATEGORIES[catName];
+      let products = null;
+
+      // Parse budget for price filter
+      const budgetRange = parseBudget(budget);
+      const openOnly = document.getElementById('openOnlyFilter').checked;
+
+      // Use product_finder API — real-time data with filters
+      const finderParams = {
+        productType: [0], // standard products only
+        sort: [['current_SALES', 'asc']], // sort by best selling (lowest BSR first)
+        perPage: 80, // get enough to filter
+        page: 0,
+      };
+      
+      // Add category filter
+      if(catId) finderParams.rootCategory = catId;
+      
+      // Add price filter (Keepa uses cents)
+      if(budgetRange){
+        finderParams.current_NEW_gte = Math.round(budgetRange.min * 100) || 1;
+        if(budgetRange.max !== Infinity) finderParams.current_NEW_lte = Math.round(budgetRange.max * 100);
+      } else {
+        finderParams.current_NEW_gte = 1; // must have a price (= active listing)
+      }
+      
+      // Require 3+ sellers for open listings
+      if(openOnly){
+        finderParams.current_COUNT_NEW_gte = 3;
+      } else {
+        finderParams.current_COUNT_NEW_gte = 1; // at least 1 seller = alive
+      }
+
+      // Sort by BSR ascending (best sellers first)
+      finderParams.current_SALES_gte = 1;
+      finderParams.current_SALES_lte = 100000; // top 100K only
+
+      res.innerHTML = `<div class="spinner"></div><span>${LANG==='uk'?'📊 Keepa: шукаю бестселери...':'📊 Keepa: finding best sellers...'}</span>`;
+      const finderData = await keepaFetch('query', finderParams, 'POST');
+      
+      const asins = finderData && !finderData._error ? finderData.asinList : null;
+
+      if(asins && asins.length){
+        const fetchCount = Math.min(asins.length, 30);
+        res.innerHTML = `<div class="spinner"></div><span>${LANG==='uk'?'📊 Завантажую дані '+fetchCount+' товарів...':'📊 Loading '+fetchCount+' products...'}</span>`;
+        products = await keepaProducts(asins.slice(0, fetchCount));
+      }
+
+      // Fallback: try bestsellers if product_finder failed
+      if(!products && catId){
+        res.innerHTML = `<div class="spinner"></div><span>${LANG==='uk'?'📊 Keepa: пробую bestsellers...':'📊 Keepa: trying bestsellers...'}</span>`;
+        const bsData = await keepaFetch('bestsellers', { category: String(catId), range: '0' });
+        const bsAsins = bsData && !bsData._error ? (bsData.asinList || (bsData.bestSellersList && bsData.bestSellersList.asinList)) : null;
+        if(bsAsins && bsAsins.length){
+          products = await keepaProducts(bsAsins.slice(0, 50));
+        }
+      }
+
+      if(products && products.length){
+        // Apply open listings filter (gated brands, seller count)
+        let filtered = openOnly ? filterOpenListings(products) : products;
+        
+        // Apply budget filter (in case product_finder didn't filter precisely)
+        filtered = filterByBudget(filtered, budget);
+        
+        // Limit to top 10
+        filtered = filtered.slice(0, 10);
+        
+        if(filtered.length){
+          // KEEPA SUCCESS — show data
+          const keepaHtml = renderKeepaProducts(filtered, cat === 'all' ? 'Home & Kitchen' : cat, budget);
+          res.className = 'response-area visible';
+          res.innerHTML = '<div class="response-content">' + keepaHtml + '</div>' + buildActionBar('scan-response', keepaHtml);
+          saveToHistory('scan-response', 'Keepa: '+(cat==='all'?'All':cat), keepaHtml);
+          setStatus('s_done');
+          btn.disabled = false;
+        } else {
+          // Products found but none in budget — show message
+          const keepaHtml = renderKeepaProducts(products, cat === 'all' ? 'Home & Kitchen' : cat);
+          const budgetMsg = LANG==='uk'
+            ? `<div style="padding:12px;margin-bottom:12px;background:rgba(232,93,4,0.08);border-radius:8px;font-size:13px;">⚠️ Жоден товар не відповідає бюджету <strong>${budget}</strong>. Показую всі результати:</div>`
+            : `<div style="padding:12px;margin-bottom:12px;background:rgba(232,93,4,0.08);border-radius:8px;font-size:13px;">⚠️ No products match budget <strong>${budget}</strong>. Showing all results:</div>`;
+          res.className = 'response-area visible';
+          res.innerHTML = '<div class="response-content">' + budgetMsg + keepaHtml + '</div>' + buildActionBar('scan-response', keepaHtml);
+          saveToHistory('scan-response', 'Keepa: '+(cat==='all'?'All':cat), keepaHtml);
+          setStatus('s_done');
+          btn.disabled = false;
+        }
+
+        // BONUS: Claude analysis (non-blocking, optional, may fail silently)
+        if(API_KEY){ tryClaudeBonus(res, products); }
+        return;
+      }
+    } catch(e){
+      console.error('Keepa error:', e);
+    }
+
+    // Keepa failed — if no Claude, show clear CORS setup instructions
+    if(!API_KEY){
+      res.className = 'response-area visible';
+      const needsProxy = !KEEPA_PROXY;
+      res.innerHTML = LANG==='uk'
+        ? `<div style="text-align:center;padding:24px;">
+            <p style="font-size:15px;">📊 Keepa не повернула даних</p>
+            ${needsProxy 
+              ? `<p style="color:var(--red);margin-top:12px;font-weight:600;">🔒 CORS блокує прямі запити до Keepa з браузера</p>
+                 <p style="color:var(--muted);margin-top:8px;">Потрібен проксі (безкоштовний Cloudflare Worker):</p>
+                 <div style="text-align:left;max-width:420px;margin:12px auto;padding:14px;background:var(--surface2);border-radius:8px;font-size:12px;line-height:1.8;">
+                   <strong>Налаштування за 2 хв:</strong><br>
+                   1️⃣ <a href="https://dash.cloudflare.com" target="_blank" style="color:var(--accent);">dash.cloudflare.com</a> → Workers → Create Worker<br>
+                   2️⃣ Вставте код з файлу <strong>keepa-proxy-worker.js</strong><br>
+                   3️⃣ Deploy → скопіюйте URL<br>
+                   4️⃣ Вставте URL в поле "Proxy URL" зверху
+                 </div>`
+              : `<p style="color:var(--muted);margin-top:8px;">Проксі налаштований, але Keepa не повернула даних. Перевір ключ або спробуй іншу категорію.</p>`
+            }
+            <p style="margin-top:12px;"><a href="https://keepa.com/#!api" target="_blank" style="color:var(--accent);">Keepa API</a> · <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent);">Додати Claude</a></p>
+          </div>`
+        : `<div style="text-align:center;padding:24px;">
+            <p style="font-size:15px;">📊 Keepa returned no data</p>
+            ${needsProxy
+              ? `<p style="color:var(--red);margin-top:12px;font-weight:600;">🔒 CORS blocks direct Keepa requests from browser</p>
+                 <p style="color:var(--muted);margin-top:8px;">Need a free Cloudflare Worker proxy:</p>
+                 <div style="text-align:left;max-width:420px;margin:12px auto;padding:14px;background:var(--surface2);border-radius:8px;font-size:12px;line-height:1.8;">
+                   <strong>Setup in 2 min:</strong><br>
+                   1️⃣ <a href="https://dash.cloudflare.com" target="_blank" style="color:var(--accent);">dash.cloudflare.com</a> → Workers → Create Worker<br>
+                   2️⃣ Paste code from <strong>keepa-proxy-worker.js</strong><br>
+                   3️⃣ Deploy → copy the URL<br>
+                   4️⃣ Paste URL into "Proxy URL" field above
+                 </div>`
+              : `<p style="color:var(--muted);margin-top:8px;">Proxy configured but Keepa returned no data. Check key or try another category.</p>`
+            }
+            <p style="margin-top:12px;"><a href="https://keepa.com/#!api" target="_blank" style="color:var(--accent);">Keepa API</a> · <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent);">Add Claude</a></p>
+          </div>`;
+      setStatus('s_err');
+      btn.disabled = false;
+      return;
+    }
+
+    // Keepa failed but Claude available — switch
+    res.innerHTML = `<div class="spinner"></div><span>${LANG==='uk'?'⚡ Keepa не відповіла — використовую Claude AI...':'⚡ Keepa unavailable — using Claude AI...'}</span>`;
+  }
+
+  // === PATH B: CLAUDE MODE ===
+  if(!API_KEY){
+    btn.disabled = false;
+    res.className = 'response-area visible';
+    res.innerHTML = `<div style="text-align:center;padding:20px;"><p>⚠️ ${LANG==='uk'?'Потрібен хоча б один ключ':'Need at least one key'}</p></div>`;
+    return;
+  }
+
+  btn.disabled = false;
+  const isCatSelected = cat !== 'all';
+  const catSearchTerm = isCatSelected ? cat : '';
+  const catInstruction = isCatSelected 
+    ? `⛔ CATEGORY: "${cat}" ONLY. No other categories allowed. ⛔`
+    : 'Show products from 3-5 diverse categories.';
+
+  callAI(`${catInstruction}\n\nPerform at least 4 web searches for trending products in ${isCatSelected ? '"'+cat+'"' : 'all categories'} on Amazon USA, eBay, Temu.\nBudget: ${budget}.\n\nFor each product: exact name, ASIN, price, BSR if found.\nShow 8-15 products. ${isCatSelected ? 'ALL from "'+cat+'" only.' : ''}`,'scan-response','scanBtn');
+}
+
+// Optional Claude analysis after Keepa success (non-blocking)
+async function tryClaudeBonus(res, products){
+  try {
+    const respContent = res.querySelector('.response-content');
+    if(!respContent) return;
+    const note = document.createElement('div');
+    note.style.cssText = 'margin-top:12px;padding:10px;color:var(--muted);font-size:12px;text-align:center;';
+    note.textContent = LANG==='uk'?'🤖 Завантажую AI аналіз...':'🤖 Loading AI analysis...';
+    respContent.appendChild(note);
+
+    const top5 = products.slice(0,5).map(p => {
+      const sc = p.stats?.current || [];
+      const price = keepaPrice(sc[0]) || keepaPrice(sc[1]) || keepaPrice(sc[18]) || '?';
+      return `"${p.title}" (${p.asin}, $${price})`;
+    }).join(', ');
+    const r = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      signal: AbortSignal.timeout(30000),
+      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2048,system:sys(),
+        messages:[{role:'user',content:`Keepa real data: ${top5}. For each: source cheapest, margin estimate, competition.`}]})
+    });
+    const data = await r.json();
+    if(data.error){
+      note.innerHTML = '💡 '+(LANG==='uk'?'AI аналіз недоступний (ліміт або ключ). Дані Keepa вище актуальні.':'AI unavailable (limit or key). Keepa data above is current.');
+    } else {
+      const text = data.content.filter(b=>b.type==='text').map(b=>b.text).join('\n');
+      if(text.trim()){
+        note.innerHTML = '<div style="border-top:2px solid var(--accent);padding-top:12px;margin-top:8px;"><h3>🤖 AI</h3><div class="response-content">'+fmt(text)+'</div></div>';
+      } else {
+        note.innerHTML = '💡 '+(LANG==='uk'?'AI не повернув аналіз. Дані Keepa вище актуальні.':'AI returned no analysis. Keepa data above is current.');
+      }
+    }
+  } catch(e){
+    // Silently handle — Keepa data is already displayed
+    console.log('Claude bonus skipped:', e.message);
+    try {
+      const respContent = res.querySelector('.response-content');
+      const existingNote = respContent?.querySelector('div:last-child');
+      if(existingNote && existingNote.textContent.includes('AI')){
+        existingNote.innerHTML = '💡 '+(LANG==='uk'?'AI аналіз недоступний. Дані Keepa вище актуальні.':'AI unavailable. Keepa data above is current.');
+      }
+    } catch(e2){}
+  }
+}
+
+function quickScan(queryKey){
+  // If Keepa available, use it for product scans
+  if(KEEPA_KEY && ['trending','under50','lowcomp'].includes(queryKey)){
+    document.getElementById('scanCategory').value = 'all';
+    return runScan(); // runScan handles Keepa path
+  }
+  if(!API_KEY && !KEEPA_KEY){
+    showNotify(LANG==='uk'?'⚠️ Встав хоча б один ключ':'⚠️ Enter at least one key');
+    return;
+  }
+  if(!API_KEY){
+    // Only Keepa — all quick scans go through Keepa
+    document.getElementById('scanCategory').value = 'all';
+    return runScan();
+  }
+  const queries = {
+    trending: { uk: 'Amazon best sellers movers shakers найприбутковіші товари квітень 2026', en: 'Amazon best sellers movers shakers most profitable products April 2026' },
+    under50:  { uk: 'Amazon best sellers до $50 високий попит низька конкуренція 2026', en: 'Amazon best sellers under $50 high demand low competition 2026' },
+    lowcomp:  { uk: 'Amazon FBA low competition high demand нові ніші квітень 2026', en: 'Amazon FBA new niches low competition high demand April 2026' },
+    office:   { uk: 'refurbished Cisco switches Polycom phones networking equipment eBay Amazon profitable', en: 'refurbished Cisco switches Polycom phones networking equipment eBay Amazon profitable resale' },
+    ebay:     { uk: 'eBay wholesale lots profitable for Amazon FBA resale 2026', en: 'eBay wholesale lots pallets profitable for Amazon FBA resale April 2026' },
+    seasonal: { uk: 'сезонні товари літо 2026 Amazon USA high demand', en: 'seasonal summer 2026 products Amazon USA high demand trending' }
+  };
+  const query = (queries[queryKey] || {})[LANG] || (queries[queryKey] || {}).en || queryKey;
+
+  const isOffice = queryKey === 'office';
+  const officeExtra = isOffice ? `
+SPECIAL FOCUS — Office & Networking Equipment:
+Search specifically for: refurbished Cisco switches, Polycom/Poly VoIP phones, Dell/HP servers, networking equipment, office IT equipment.
+Search "refurbished Cisco eBay sold items", "Polycom phones Amazon best sellers", "networking equipment wholesale lots", "refurbished enterprise switches profitable".
+Include specific model numbers: Cisco Catalyst 2960, Cisco SG series, Poly VVX, Poly CCX, Meraki, Ubiquiti, etc.
+Check GovDeals and government surplus for IT equipment.` : '';
+
+  callAI(`Perform at least 4 web searches before answering. Search for: ${query}
+${officeExtra}
+Context: Amazon FBA seller with $1,000-$5,000 budget on Amazon USA. 10-year account. Experienced with Cisco and Polycom equipment.
+
+FOR EACH PRODUCT provide:
+- **EXACT listing title with model/part number** (ASIN if Amazon)
+- Current price on the platform
+- BSR rank and/or number sold
+- Where to source cheapest + price
+- Estimated profit margin
+
+FORMAT:
+## 🏠 [Category]
+### Amazon USA
+1. **[EXACT title + model]** (ASIN: B0XXX) — $X, BSR #X, ⭐ X reviews
+   - 🏭 Source: [platform] at $X → margin X%
+### eBay
+1. **[EXACT eBay title]** — $X, X sold/month
+### Temu
+1. **[EXACT Temu title]** — $X
+
+Show 3-5 categories, 15-25 total products with REAL data from web search.`,'scan-response','scanBtn');
+}
+
+async function analyzeNiche(){
+  const niche=document.getElementById('nicheInput').value.trim();
+  if(!niche){showNotify(t('n_fill'));return;}
+  const market=document.getElementById('nicheMarket').value;
+  const model=document.getElementById('nicheModel').value;
+
+  // If Claude available — use AI analysis
+  if(API_KEY){
+    callAI(`Perform at least 5 web searches to analyze "${niche}" niche for Amazon FBA USA. Model: ${model}.
+
+SEARCH PLAN — execute all of these:
+1. Search "Amazon best sellers ${niche} 2026"
+2. Search "${niche} eBay sold items price"
+3. Search "${niche} wholesale supplier USA"
+4. Search "${niche} Amazon FBA competition analysis 2026"
+5. Search "${niche} Temu price comparison"
+
+## 🔥 Top 10 Best Selling Products in "${niche}" on Amazon USA
+Search Amazon.com Best Sellers RIGHT NOW. For each product:
+1. **[EXACT listing title with model/brand]** (ASIN: B0XXX)
+   - 💰 Price: $X | BSR: #X | ⭐ X reviews | Est. monthly sales: X
+(list 5-10 real products found via search)
+
+## 🛒 Price Comparison Across Platforms
+| Product | Amazon Price | eBay Price | Temu Price | Alibaba Price |
+
+## 📈 Demand Analysis — Google Trends data, search volume, seasonal patterns
+## 🏆 Competition — number of Amazon sellers, top brands, average reviews, entry difficulty
+## 💰 Financial Estimate — realistic buy/sell prices, FBA fees, net margin %
+
+## 🏭 Sourcing Options (search each platform)
+- Alibaba: search "${niche}" — list real suppliers found, prices, MOQ
+- eBay wholesale: search "${niche} wholesale lot" — list real listings
+- Temu: search "${niche}" — list products and prices
+- Gov auctions: search GovDeals for related equipment
+
+## 🚀 Entry Strategy — TOP 3 specific products to start with (exact names + ASINs), investment needed
+## ⚠️ Risks — gating, IP, restrictions
+## ✅ Verdict — 🔥 Hot / ✅ Good / ⚠️ Risky / ❌ Avoid`,'niche-response','nicheBtn');
+    return;
+  }
+
+  // No Claude — use Keepa + direct links
+  const btn=document.getElementById('nicheBtn');
+  const res=document.getElementById('niche-response');
+  btn.disabled=true; setStatus('s_scan');
+  res.className='response-area visible loading';
+  res.innerHTML=`<div class="spinner"></div><span>${LANG==='uk'?'📊 Keepa: аналіз ніші...':'📊 Keepa: niche analysis...'}</span>`;
+
+  let keepaHtml = '';
+  if(KEEPA_KEY){
+    try {
+      const products = await keepaSearchProducts(niche);
+      if(products && products.length){
+        keepaHtml = renderKeepaProducts(products, niche);
+      }
+    } catch(e){ console.error('Keepa niche error:', e); }
+  }
+
+  const enc = encodeURIComponent(niche);
+  const links = buildMarketplaceLinks(niche, enc);
+  
+  res.className='response-area visible';
+  res.innerHTML = `<div class="response-content">
+    ${keepaHtml || `<p style="color:var(--muted);text-align:center;padding:12px;">${LANG==='uk'?'Keepa не знайшла товарів для "'+niche+'"':'Keepa found no products for "'+niche+'"'}</p>`}
+    <div style="margin-top:20px;border-top:2px solid var(--accent);padding-top:16px;">
+      <h3>${LANG==='uk'?'🔍 Досліди ринок самостійно':'🔍 Research the market yourself'}</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:12px;">
+        ${links}
+      </div>
+    </div>
+  </div>`;
+  setStatus('s_done');
+  btn.disabled=false;
+}
+
+function searchAuctions(){
+  const query=document.getElementById('auctionInput').value.trim();
+  if(!query){showNotify(t('n_fill'));return;}
+  const type=document.getElementById('auctionType').value;
+  const budget=document.getElementById('auctionBudget').value;
+  const typeFilter = type==='all' ? 'all categories' : type;
+
+  // If Claude available — use AI
+  if(API_KEY){
+    callAI(`Perform at least 4 web searches for "${query}" across auction platforms. Category: ${typeFilter}. Budget: ${budget}.
+
+SEARCH PLAN:
+1. Search "GovDeals ${query}" for government surplus
+2. Search "Liquidation.com ${query}" for liquidation lots
+3. Search "eBay ${query} wholesale lot pallet" for eBay lots
+4. Search "B-Stock ${query}" OR "GSA auction ${query}" for more options
+
+## 🏛️ GovDeals.com — list REAL auctions found
+## 🏛️ GSA Auctions — list REAL listings
+## 📦 Liquidation.com / B-Stock — list lots and pallets
+## 🛒 eBay Wholesale Lots — list wholesale listings
+## 📊 Best Opportunities Table
+| Platform | Item/Lot | Buy Price | Est. Resale | Potential Profit | ROI % |
+## ✅ Top 3 Recommendations`,'auction-response','auctionBtn');
+    return;
+  }
+
+  // No Claude — show direct auction links
+  const res=document.getElementById('auction-response');
+  const enc = encodeURIComponent(query);
+  const links = buildAuctionLinks(query, enc);
+
+  res.className='response-area visible';
+  res.innerHTML = `<div class="response-content">
+    <h3>${LANG==='uk'?'🏛️ Аукціони та ліквідація: "'+query+'"':'🏛️ Auctions & Liquidation: "'+query+'"'}</h3>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:12px;">${LANG==='uk'?'Натисни на посилання щоб відкрити пошук на кожному сайті:':'Click links to search each platform:'}</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;">
+      ${links}
+    </div>
+  </div>`;
+}
+
+function quickAuction(queryKey){
+  const queries = {
+    electronics: 'electronics pallets liquidation',
+    cisco: 'Cisco networking equipment',
+    laptops: 'laptop pallets Amazon returns',
+    pallets: 'liquidation pallets Amazon Walmart returns'
+  };
+  const query = queries[queryKey] || queryKey;
+  document.getElementById('auctionInput').value = query;
+  searchAuctions();
+}
+
+async function findSuppliers(){
+  const p=document.getElementById('supplierInput').value.trim();
+  if(!p){showNotify(t('n_fill'));return;}
+  const model=document.getElementById('sourcingModel').value;
+  const budget=document.getElementById('supplierBudget').value;
+
+  // If Claude available — use AI
+  if(API_KEY){
+    callAI(`Perform at least 5 web searches to find sourcing for "${p}". Model: ${model}. Budget: ${budget}.
+
+SEARCH PLAN — execute all:
+1. Search "Amazon best sellers ${p}" to find target sell price and BSR
+2. Search "eBay ${p} wholesale lot bulk" for wholesale options
+3. Search "${p} wholesale distributor USA" for wholesale sources
+4. Search "Alibaba ${p}" for China sourcing
+5. Search "GovDeals ${p}" OR "Liquidation.com ${p}" for auction sources
+
+USA market only.
+
+## 🎯 Target Product
+Search Amazon.com for the best-selling version of "${p}". Give EXACT Amazon listing title, ASIN, current sell price, BSR, reviews.
+
+## 📦 eBay (Wholesale Lots, Bulk & Individual)
+Search eBay for "${p} wholesale lot", "${p} bulk", and "${p} new". List REAL listings.
+
+## 🏭 Alibaba / 1688
+Search Alibaba.com for "${p}". List 3-5 REAL supplier listings with price per unit, MOQ.
+
+## 🛒 Temu
+Search Temu for "${p}". List products and prices.
+
+## 🏛️ Government Auctions & Liquidation
+Search GovDeals, Liquidation.com, B-Stock for "${p}" or related lots.
+
+## 🏢 Wholesale Distributors (USA)
+Search "${p} wholesale distributor USA". List companies with prices and MOQ.
+
+## 🛍️ Retail Arbitrage
+Search Walmart, Target, Costco for "${p}".
+
+## 💰 Price Comparison Table
+| Platform | Product Name | Unit Price | MOQ | Shipping Est | Landed Cost | Margin vs Amazon |
+
+## ✅ Best Option — which source wins and why
+## 📋 Next Steps this week`,'supplier-response','supplierBtn');
+    return;
+  }
+
+  // No Claude — use Keepa + direct links
+  const btn=document.getElementById('supplierBtn');
+  const res=document.getElementById('supplier-response');
+  btn.disabled=true; setStatus('s_scan');
+  res.className='response-area visible loading';
+  res.innerHTML=`<div class="spinner"></div><span>${LANG==='uk'?'📊 Пошук постачальників...':'📊 Finding suppliers...'}</span>`;
+
+  let keepaHtml = '';
+  if(KEEPA_KEY){
+    try {
+      const products = await keepaSearchProducts(p);
+      if(products && products.length){
+        keepaHtml = `<h3>${LANG==='uk'?'🎯 Ціна на Amazon (дані Keepa)':'🎯 Amazon Price (Keepa data)'}</h3>` + renderKeepaProducts(products, p);
+      }
+    } catch(e){ console.error('Keepa supplier error:', e); }
+  }
+
+  const enc = encodeURIComponent(p);
+  const links = buildSupplierLinks(p, enc);
+
+  res.className='response-area visible';
+  res.innerHTML = `<div class="response-content">
+    ${keepaHtml}
+    <div style="margin-top:16px;border-top:2px solid var(--accent);padding-top:16px;">
+      <h3>${LANG==='uk'?'📦 Знайди постачальників':'📦 Find Suppliers'}</h3>
+      <p style="color:var(--muted);font-size:12px;margin-bottom:12px;">${LANG==='uk'?'Натисни на посилання щоб відкрити пошук на кожній платформі:':'Click links to open search on each platform:'}</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;">
+        ${links}
+      </div>
+    </div>
+  </div>` + buildActionBar('supplier-response', keepaHtml);
+  setStatus('s_done');
+  btn.disabled=false;
+}
+
+// ===== LINK BUILDERS for Keepa-only mode =====
+const linkStyle = 'display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);text-decoration:none;font-size:13px;font-weight:600;transition:all 0.2s;';
+
+function buildMarketplaceLinks(name, enc){
+  return [
+    {icon:'🛒', label:'Amazon USA', url:`https://www.amazon.com/s?k=${enc}`},
+    {icon:'📦', label:'eBay', url:`https://www.ebay.com/sch/i.html?_nkw=${enc}`},
+    {icon:'🛍️', label:'Temu', url:`https://www.temu.com/search_result.html?search_key=${enc}`},
+    {icon:'🏭', label:'Alibaba', url:`https://www.alibaba.com/trade/search?SearchText=${enc}`},
+    {icon:'📈', label:'Google Trends', url:`https://trends.google.com/trends/explore?q=${enc}&geo=US`},
+    {icon:'🔍', label:'Google Shopping', url:`https://www.google.com/search?tbm=shop&q=${enc}`},
+    {icon:'🏛️', label:'GovDeals', url:`https://www.govdeals.com/index.cfm?fa=Main.AdvSearchResultsNew&kession=${enc}`},
+    {icon:'📊', label:'Keepa', url:`https://keepa.com/#!search/1-${enc}`},
+  ].map(l => `<a href="${l.url}" target="_blank" rel="noopener" style="${linkStyle}" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">${l.icon} ${l.label}</a>`).join('');
+}
+
+function buildSupplierLinks(name, enc){
+  return [
+    {icon:'🛒', label:'Amazon — ' + name, url:`https://www.amazon.com/s?k=${enc}`},
+    {icon:'📦', label:'eBay Wholesale Lots', url:`https://www.ebay.com/sch/i.html?_nkw=${enc}+wholesale+lot`},
+    {icon:'📦', label:'eBay Bulk', url:`https://www.ebay.com/sch/i.html?_nkw=${enc}+bulk`},
+    {icon:'🏭', label:'Alibaba', url:`https://www.alibaba.com/trade/search?SearchText=${enc}`},
+    {icon:'🛍️', label:'Temu', url:`https://www.temu.com/search_result.html?search_key=${enc}`},
+    {icon:'🏪', label:'Walmart', url:`https://www.walmart.com/search?q=${enc}`},
+    {icon:'🎯', label:'Target', url:`https://www.target.com/s?searchTerm=${enc}`},
+    {icon:'🏛️', label:'GovDeals', url:`https://www.govdeals.com/index.cfm?fa=Main.AdvSearchResultsNew&kession=${enc}`},
+    {icon:'📦', label:'Liquidation.com', url:`https://www.liquidation.com/aucSearch/index/query/${enc}`},
+    {icon:'📦', label:'B-Stock', url:`https://bstock.com/search/?q=${enc}`},
+    {icon:'🔍', label:'Wholesale USA (Google)', url:`https://www.google.com/search?q=${enc}+wholesale+distributor+USA`},
+    {icon:'🔍', label:'Google Shopping', url:`https://www.google.com/search?tbm=shop&q=${enc}`},
+  ].map(l => `<a href="${l.url}" target="_blank" rel="noopener" style="${linkStyle}" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">${l.icon} ${l.label}</a>`).join('');
+}
+
+function buildAuctionLinks(name, enc){
+  return [
+    {icon:'🏛️', label:'GovDeals', url:`https://www.govdeals.com/index.cfm?fa=Main.AdvSearchResultsNew&kession=${enc}`},
+    {icon:'🏛️', label:'GSA Auctions', url:`https://gsaauctions.gov/auctions/search?q=${enc}`},
+    {icon:'🏛️', label:'GovPlanet', url:`https://www.govplanet.com/search?q=${enc}`},
+    {icon:'📦', label:'Liquidation.com', url:`https://www.liquidation.com/aucSearch/index/query/${enc}`},
+    {icon:'📦', label:'B-Stock', url:`https://bstock.com/search/?q=${enc}`},
+    {icon:'📦', label:'Direct Liquidation', url:`https://www.directliquidation.com/search/?q=${enc}`},
+    {icon:'📦', label:'eBay Wholesale Lots', url:`https://www.ebay.com/sch/i.html?_nkw=${enc}+wholesale+lot+pallet`},
+    {icon:'📦', label:'eBay Pallets', url:`https://www.ebay.com/sch/i.html?_nkw=${enc}+pallet+liquidation`},
+    {icon:'🛒', label:'Amazon (resale price)', url:`https://www.amazon.com/s?k=${enc}`},
+    {icon:'📊', label:'Keepa (price history)', url:`https://keepa.com/#!search/1-${enc}`},
+  ].map(l => `<a href="${l.url}" target="_blank" rel="noopener" style="${linkStyle}" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">${l.icon} ${l.label}</a>`).join('');
+}
+
+// ===== ACTION BAR: Copy + Export CSV =====
+function buildActionBar(resId, rawText){
+  const id = resId.replace('-response','');
+  const disclaimer = LANG==='uk'
+    ? '⚠️ Дані отримані через web search, а не напряму з Amazon. BSR та ціни можуть бути неактуальними. Перевіряй кожен товар на Amazon перед закупівлею. Позначки: ✅ = підтверджено в пошуку | 📰 = зі статті | ⚠️ = оцінка | ❌ = не знайдено'
+    : '⚠️ Data obtained via web search, not directly from Amazon. BSR and prices may be outdated. Verify every product on Amazon before purchasing. Labels: ✅ = verified in search | 📰 = from article | ⚠️ = estimate | ❌ = not found';
+  return `<div style="margin-top:12px;padding:10px 14px;background:rgba(240,165,0,0.08);border:1px solid rgba(240,165,0,0.2);border-radius:8px;font-size:12px;color:var(--muted);line-height:1.6;">${disclaimer}</div>
+  <div class="action-bar">
+    <button class="action-btn" onclick="copyResult('${resId}')" id="copyBtn-${resId}">📋 ${t('act_copy')}</button>
+    <button class="action-btn" onclick="exportCSV('${resId}')">📥 ${t('act_csv')}</button>
+  </div>`;
+}
+
+function copyResult(resId){
+  const el = document.getElementById(resId);
+  const content = el.querySelector('.response-content');
+  if(!content) return;
+  const text = content.innerText;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn = document.getElementById('copyBtn-'+resId);
+    if(btn){ btn.textContent='✅ '+t('act_copied'); btn.classList.add('copied'); setTimeout(()=>{ btn.textContent='📋 '+t('act_copy'); btn.classList.remove('copied'); },2000); }
+  });
+}
+
+function exportCSV(resId){
+  const el = document.getElementById(resId);
+  const content = el.querySelector('.response-content');
+  if(!content) return;
+  const lines = content.innerText.split('\n').filter(l=>l.trim());
+  let csv = 'Section,Content\n';
+  let currentSection = 'General';
+  lines.forEach(line => {
+    const trimmed = line.trim();
+    if(trimmed.match(/^[#🔥🎯🆚💰📦🏠🐾🏋💄🧸👕📱🔧🚗🍎📚🎨🏢🔬🛒📦🏭🛍️🏆✅⚠️📈📊🔗]/)){
+      currentSection = trimmed.replace(/^#+\s*/, '').replace(/[#]/g,'');
+    } else if(trimmed.length > 5){
+      const escaped = trimmed.replace(/"/g,'""');
+      const secEscaped = currentSection.replace(/"/g,'""');
+      csv += `"${secEscaped}","${escaped}"\n`;
+    }
+  });
+  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = new Date().toISOString().slice(0,10);
+  const type = resId.replace('-response','');
+  a.href = url; a.download = `market-scan-${type}-${date}.csv`; a.click();
+  URL.revokeObjectURL(url);
+  showNotify('📥 CSV exported!');
+}
+
+// ===== QUICK ACTIONS: Product → Profit / Supplier =====
+function addQuickActions(html){
+  return html.replace(/<strong>([^<]{15,})<\/strong>/g, (match, productName) => {
+    const safeName = productName.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    return match + `<span class="quick-action" onclick="quickSupplier('${safeName}')" title="${t('qa_supplier')}">📦</span><span class="quick-action" onclick="quickAuctionFor('${safeName}')" title="${t('qa_auction')}">🏛️</span>`;
+  });
+}
+
+function quickSupplier(productName){
+  switchTab('supplier', document.querySelectorAll('.tab')[2]);
+  document.getElementById('supplierInput').value = productName;
+  findSuppliers();
+}
+
+function quickAuctionFor(productName){
+  switchTab('auctions', document.querySelectorAll('.tab')[3]);
+  document.getElementById('auctionInput').value = productName;
+  searchAuctions();
+}
+
+// ===== HISTORY =====
+function getHistory(){ try{ return JSON.parse(localStorage.getItem('mim_history')||'[]'); }catch(e){ return []; } }
+function setHistory(h){ localStorage.setItem('mim_history', JSON.stringify(h)); }
+
+const HIST_TYPE_MAP = {
+  'scan':'hist_scan', 'niche':'hist_niche',
+  'supplier':'hist_supplier', 'auction':'hist_auction'
+};
+
+function saveToHistory(resId, prompt, text){
+  const type = resId.replace('-response','');
+  const history = getHistory();
+  const preview = text.replace(/[#*\-\n]+/g,' ').trim().substring(0,150);
+  history.unshift({
+    type: type,
+    prompt: prompt.substring(0,200),
+    text: text,
+    preview: preview,
+    date: new Date().toISOString()
+  });
+  if(history.length > 50) history.length = 50;
+  setHistory(history);
+}
+
+function renderHistory(){
+  const history = getHistory();
+  const list = document.getElementById('historyList');
+  const count = document.getElementById('historyCount');
+  count.textContent = history.length;
+  if(!history.length){
+    list.innerHTML = `<div class="history-empty">${t('hist_empty')}</div>`;
+    return;
+  }
+  list.innerHTML = history.map((item, i) => {
+    const d = new Date(item.date);
+    const dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    const typeKey = HIST_TYPE_MAP[item.type] || item.type;
+    return `<div class="history-item" onclick="viewHistoryItem(${i})">
+      <div class="history-meta">
+        <span class="history-type">${t(typeKey)}</span>
+        <span class="history-date">${dateStr}</span>
+      </div>
+      <div class="history-preview">${item.preview}...</div>
+    </div>`;
+  }).join('');
+}
+
+function viewHistoryItem(index){
+  const history = getHistory();
+  const item = history[index];
+  if(!item) return;
+  const typeToPanel = { scan:'scan', niche:'niche', supplier:'supplier', auction:'auctions' };
+  const panel = typeToPanel[item.type] || 'scan';
+  const tabIndex = ['scan','niche','supplier','auctions'].indexOf(panel);
+  switchTab(panel, document.querySelectorAll('.tab')[tabIndex]);
+  const resId = item.type + '-response';
+  const res = document.getElementById(resId);
+  if(res){
+    const formatted = fmt(item.text);
+    const withActions = addQuickActions(formatted);
+    res.className = 'response-area visible';
+    res.innerHTML = '<div class="response-content">' + withActions + '</div>' + buildActionBar(resId, item.text);
+  }
+}
+
+function clearHistory(){
+  if(!confirm(t('hist_confirm'))) return;
+  localStorage.removeItem('mim_history');
+  renderHistory();
+  showNotify('🗑️ ' + (LANG==='uk'?'Історію очищено':'History cleared'));
+}
+
+// ===== KEEPA API INTEGRATION =====
+const KEEPA_CATEGORIES = {
+  'all':0,'Home & Kitchen':1055398,'Kitchen & Dining':284507,'Cookware':289679,
+  'Small Kitchen Appliances':289913,'Bedding':1063252,'Bath':1063498,'Storage & Organization':2422468011,
+  'Lighting & Ceiling Fans':495224,'Furniture':1063306,'Appliances':2619525011,
+  'Patio, Lawn & Garden':2972638011,'Gardening Tools & Supplies':553788,
+  'Beauty & Personal Care':3760911,'Skin Care':11060451,'Hair Care':11057241,
+  'Makeup & Cosmetics':11058281,'Health & Household':3760901,
+  'Baby':165796011,'Pet Supplies':2619533011,'Dog Supplies':2975312011,'Cat Supplies':2975313011,
+  'Sports & Outdoors':3375251,'Exercise & Fitness Equipment':3407731,
+  'Toys & Games':165793011,'Electronics':172282,'Cell Phones & Accessories':2335752011,
+  'Headphones & Earbuds':172541,'Smart Home':6563140011,'Computer Accessories':172456,
+  'Tools & Home Improvement':228013,'Power Tools':328182011,'Hand Tools':553192,
+  'Automotive':15684181,'Office Products':1064954,'Industrial & Scientific':16310091,
+  'Arts, Crafts & Sewing':2617941011,'Books':283155,'Grocery & Gourmet Food':16310101,
+  'Networking Equipment':281414,'VoIP & Telecommunications':172562,
+  'Men\'s Clothing':7147441011,'Women\'s Clothing':7147440011,
+  'Shoes & Boots':679255011,'Luggage & Travel Gear':9479199011
+};
+
+async function keepaFetch(endpoint, params={}, method='GET'){
+  if(!KEEPA_KEY) return { _error: 'no key' };
+  
+  let directUrl, fetchOptions;
+  
+  if(method === 'POST'){
+    // POST request (for product_finder / query endpoint)
+    const keepaUrl = new URL('https://api.keepa.com/' + endpoint);
+    keepaUrl.searchParams.set('key', KEEPA_KEY);
+    keepaUrl.searchParams.set('domain', '1');
+    directUrl = keepaUrl.toString();
+    fetchOptions = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    };
+  } else {
+    // GET request (for product, bestsellers, search)
+    const keepaUrl = new URL('https://api.keepa.com/' + endpoint);
+    keepaUrl.searchParams.set('key', KEEPA_KEY);
+    if(params.domain === undefined && endpoint !== 'bestsellers'){
+      keepaUrl.searchParams.set('domain', '1');
+    }
+    Object.entries(params).forEach(([k,v]) => keepaUrl.searchParams.set(k, String(v)));
+    directUrl = keepaUrl.toString();
+    fetchOptions = { method: 'GET' };
+  }
+  
+  // Helper: try fetch, return parsed JSON or null
+  async function tryFetch(url, label, opts={}){
+    try {
+      const mergedOpts = { signal: AbortSignal.timeout(15000), ...opts };
+      const r = await fetch(url, mergedOpts);
+      if(!r.ok){ console.log(label + ' HTTP ' + r.status); return null; }
+      const data = await r.json();
+      if(data.error){ console.log(label + ' API error:', data.error); return { _error: data.error.message || JSON.stringify(data.error) }; }
+      return data;
+    } catch(e){
+      console.log(label + ' failed:', e.message);
+      return null;
+    }
+  }
+
+  // Try 1: Direct Keepa API
+  let result = await tryFetch(directUrl, 'Keepa direct', fetchOptions);
+  if(result) return result;
+
+  // Try 2: User's proxy if configured
+  if(KEEPA_PROXY){
+    const proxyBase = KEEPA_PROXY + endpoint;
+    if(method === 'POST'){
+      // For POST, proxy URL just has the key, body is sent as POST
+      const proxyUrl = proxyBase + '?key=' + KEEPA_KEY + '&domain=1';
+      result = await tryFetch(proxyUrl, 'Keepa proxy', fetchOptions);
+    } else {
+      const queryPart = directUrl.split('?')[1] || '';
+      const proxyUrl = proxyBase + '?' + queryPart;
+      result = await tryFetch(proxyUrl, 'Keepa proxy');
+    }
+    if(result) return result;
+  }
+
+  // Try 3: Public CORS proxies as last resort (GET only)
+  if(method === 'GET'){
+    const proxies = [
+      'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(directUrl),
+      'https://thingproxy.freeboard.io/fetch/' + directUrl,
+      'https://corsproxy.io/?' + encodeURIComponent(directUrl)
+    ];
+    for(const proxyUrl of proxies){
+      result = await tryFetch(proxyUrl, 'CORS proxy');
+      if(result) return result;
+    }
+  }
+
+  return { _error: LANG==='uk'?'Keepa API недоступна (CORS). Налаштуй проксі або перевір ключ.':'Keepa API unavailable (CORS). Set up proxy or check key.' };
+}
+
+async function keepaBestSellers(categoryName){
+  const catId = KEEPA_CATEGORIES[categoryName];
+  if(!catId) return null;
+  // range=0 means current BSR, domain=1 means Amazon.com (USA)
+  const data = await keepaFetch('bestsellers', { category: String(catId), range: '0' });
+  if(!data || data._error) return null;
+  // Response can have asinList directly or inside bestSellersList
+  const list = data.asinList || (data.bestSellersList && data.bestSellersList.asinList) || null;
+  return list ? list.slice(0,20) : null;
+}
+
+async function keepaSearchProducts(searchTerm){
+  // Use Keepa's search endpoint (product search by term)
+  const data = await keepaFetch('search', { type: 'product', term: searchTerm, page: '0' });
+  if(!data || data._error) return null;
+  // If search returned ASINs, fetch full product data
+  if(data.asinList && data.asinList.length){
+    return await keepaProducts(data.asinList.slice(0,30));
+  }
+  if(data.products && data.products.length) return data.products.slice(0,15);
+  return null;
+}
+
+async function keepaProducts(asins){
+  if(!asins || !asins.length) return null;
+  const batch = asins.slice(0,10).join(',');
+  const data = await keepaFetch('product', { asin: batch, stats: '180', history: '0', rating: '1' });
+  if(!data || data._error || !data.products) return null;
+  
+  // Filter out dead/closed listings — CRITICAL
+  // A product is "alive" if it has at least one current price > 0
+  // stats.current indices: [0]=Amazon, [1]=New 3rd party, [2]=Used, [18]=Buy Box
+  // Value of -1 means "no offer available"
+  const alive = data.products.filter(p => {
+    if(!p || !p.title) return false;
+    const sc = p.stats && p.stats.current ? p.stats.current : [];
+    const amazonPrice = sc[0];
+    const newPrice = sc[1];
+    const usedPrice = sc[2];
+    const buyBox = sc[18];
+    // Product is alive if ANY price type is currently available (> 0)
+    const hasPrice = (amazonPrice > 0) || (newPrice > 0) || (usedPrice > 0) || (buyBox > 0);
+    // Also check: if lastUpdate exists and is recent (Keepa time = minutes since epoch 2011-01-01)
+    // But simplest check: has current price
+    if(!hasPrice){
+      console.log('Filtered DEAD listing:', p.title?.substring(0,50), 'ASIN:', p.asin, 
+        'prices: Amazon='+amazonPrice, 'New='+newPrice, 'Used='+usedPrice, 'BuyBox='+buyBox);
+    }
+    return hasPrice;
+  });
+  
+  console.log('Keepa alive filter:', alive.length, '/', data.products.length, 'products have active listings');
+  
+  // Debug: log first alive product
+  if(alive[0]){
+    const p = alive[0];
+    console.log('Keepa product sample:', {
+      title: p.title?.substring(0,40),
+      asin: p.asin,
+      statsCurrent: p.stats?.current,
+      amazonPrice: p.stats?.current?.[0],
+      newPrice: p.stats?.current?.[1],
+      salesRank: p.stats?.current?.[3],
+      rating: p.stats?.current?.[16],
+      reviews: p.stats?.current?.[17],
+    });
+  }
+  
+  return alive.length ? alive : null;
+}
+
+function keepaPrice(val){ return val != null && val > 0 ? (val/100).toFixed(2) : null; }
+
+// Extract last value from a Keepa csv time-series array [time, val, time, val, ...]
+function keepaCsvLast(csvArray){
+  if(!csvArray || !Array.isArray(csvArray) || csvArray.length < 2) return null;
+  const val = csvArray[csvArray.length - 1]; // last value
+  return val > 0 ? val : null;
+}
+
+// Get product price in dollars (float) from Keepa product object
+function getKeepaProductPrice(p){
+  const sc = p.stats && p.stats.current ? p.stats.current : [];
+  const raw = sc[0] > 0 ? sc[0] : (sc[1] > 0 ? sc[1] : (sc[18] > 0 ? sc[18] : null));
+  if(raw) return raw / 100;
+  if(p.csv){
+    const csvVal = keepaCsvLast(p.csv[0]) || keepaCsvLast(p.csv[1]);
+    if(csvVal) return csvVal / 100;
+  }
+  return null;
+}
+
+// Parse budget string like "$500 - $1,000" into {min, max}
+function parseBudget(budget){
+  if(!budget || budget === 'any') return null;
+  const nums = budget.replace(/[^0-9,.-]/g, ' ').split(/\s+/).map(s => parseFloat(s.replace(/,/g,'')));
+  const valid = nums.filter(n => !isNaN(n) && n >= 0);
+  if(valid.length >= 2) return { min: Math.min(...valid), max: Math.max(...valid) };
+  if(valid.length === 1) return { min: 0, max: valid[0] };
+  return null;
+}
+
+// Filter products by budget range
+function filterByBudget(products, budget){
+  const range = parseBudget(budget);
+  if(!range) return products; // no filter
+  return products.filter(p => {
+    const price = getKeepaProductPrice(p);
+    if(!price) return true; // include products without price (don't lose data)
+    return price >= range.min && price <= range.max;
+  });
+}
+
+// === GATING ESTIMATOR ===
+// Known brands that typically require approval/invoice on Amazon
+const GATED_BRANDS = new Set([
+  'apple','nike','adidas','samsung','sony','bose','dyson','lego','disney',
+  'nintendo','microsoft','gucci','louis vuitton','chanel','prada','hermes',
+  'rolex','omega','cartier','tiffany','dior','burberry','versace','armani',
+  'under armour','new balance','puma','north face','patagonia','yeti',
+  'beats','jbl','gopro','canon','nikon','fujifilm','leica',
+  'dewalt','milwaukee','makita','bosch','snap-on',
+  'hasbro','mattel','fisher-price','nerf',
+  'loreal','estee lauder','clinique','mac cosmetics','lancome',
+  'gillette','oral-b','braun','philips sonicare',
+  'kitchenaid','vitamix','instant pot','cuisinart','breville',
+  'nutribullet','ninja','shark','roomba','irobot',
+  'weber','traeger','hydroflask','stanley',
+  'dji','meta','oculus','blink','ring','sonos','marshall',
+  'anker','jackery','ecoflow','bluetti'
+]);
+
+// Gated product keywords — if ANY of these appear ANYWHERE in title, product is gated
+const GATED_KEYWORDS = [
+  'airpods','airpod','iphone','ipad','macbook','apple watch','homepod','apple tv',
+  'beats solo','beats studio','beats fit','beats flex','powerbeats',
+  'samsung galaxy','galaxy buds','galaxy watch','galaxy tab',
+  'playstation','ps5','ps4','xbox','nintendo switch','joy-con','switch oled',
+  'meta quest','oculus quest',
+  'dyson v7','dyson v8','dyson v10','dyson v11','dyson v12','dyson v15','dyson airwrap','dyson supersonic',
+  'dji mini','dji mavic','dji osmo','dji pocket','dji air','dji avata',
+  'lego city','lego technic','lego star wars','lego friends','lego creator','lego duplo',
+  'bose quietcomfort','bose soundlink','bose earbuds',
+  'jbl flip','jbl charge','jbl go ','jbl tune','jbl live','jbl partybox',
+  'gopro hero','gopro max',
+  'yeti rambler','yeti tumbler','yeti cooler',
+  'kitchenaid artisan','kitchenaid stand','kitchenaid mixer',
+  'dewalt 20v','dewalt xr','milwaukee m18','milwaukee m12',
+  'nike air','nike dunk','air jordan','jordan retro','air force 1',
+  'adidas yeezy','adidas ultraboost','adidas samba',
+  'canon eos','nikon z','sony alpha','sony wh-','sony wf-',
+  'ring doorbell','ring camera','blink mini','blink outdoor',
+  'sonos one','sonos beam','sonos arc',
+  'roomba i','roomba j','roomba s',
+];
+
+const GATED_CATEGORIES = new Set([
+  'grocery','topicals','beauty','fine jewelry','watches',
+  'automotive','collectible coins','sports collectibles',
+  'music','dvd','video games','toys & games'
+]);
+
+function estimateGating(product, sellerCount){
+  const title = (product.title || '').toLowerCase();
+  const brand = (product.brand || '').toLowerCase();
+  const category = (product.categoryTree?.[0]?.name || '').toLowerCase();
+  
+  // Check 1: brand field
+  const brandGated = brand && (GATED_BRANDS.has(brand) || [...GATED_BRANDS].some(gb => brand.includes(gb)));
+  
+  // Check 2: brand name anywhere in title
+  const titleBrandGated = [...GATED_BRANDS].some(gb => title.includes(gb));
+  
+  // Check 3: specific product keywords in title
+  const titleKeywordGated = GATED_KEYWORDS.some(kw => title.includes(kw));
+  
+  if(brandGated || titleBrandGated || titleKeywordGated){
+    const reason = brandGated ? brand : (titleKeywordGated ? GATED_KEYWORDS.find(kw => title.includes(kw)) : [...GATED_BRANDS].find(gb => title.includes(gb)));
+    return { level: 'gated', badge: '🔴', tip: 'Gated: '+reason };
+  }
+  
+  const isGatedCategory = [...GATED_CATEGORIES].some(gc => category.includes(gc));
+  if(isGatedCategory){
+    return { level: 'gated', badge: '🔴', tip: 'Gated category: '+category };
+  }
+  
+  if(sellerCount && sellerCount >= 5){
+    return { level: 'open', badge: '🟢', tip: (LANG==='uk'?'Відкритий — ':'Open — ')+sellerCount+(LANG==='uk'?' продавців':' sellers') };
+  }
+  
+  if(sellerCount && sellerCount >= 3){
+    return { level: 'check', badge: '🟡', tip: (LANG==='uk'?'Перевір — ':'Check — ')+sellerCount+(LANG==='uk'?' продавців':' sellers') };
+  }
+  
+  if(sellerCount !== null && sellerCount <= 2){
+    return { level: 'gated', badge: '🔴', tip: (LANG==='uk'?'Мало продавців — ':'Few sellers — ')+sellerCount };
+  }
+  
+  return { level: 'unknown', badge: '⚪', tip: LANG==='uk'?'Недостатньо даних':'Not enough data' };
+}
+
+function filterOpenListings(products){
+  return products.filter(p => {
+    const gating = estimateGating(p, getSellerCount(p));
+    if(gating.level === 'gated'){
+      console.log('Filtered GATED:', p.title?.substring(0,50), '| Brand:', p.brand, '| Reason:', gating.tip);
+      return false;
+    }
+    return true;
+  });
+}
+
+function getSellerCount(p){
+  const sc = p.stats && p.stats.current ? p.stats.current : [];
+  const newSellers = sc[11] > 0 ? sc[11] : 0;
+  const usedSellers = sc[12] > 0 ? sc[12] : 0;
+  return (p.offerCount > 0 ? p.offerCount : newSellers + usedSellers) || null;
+}
+
+function renderKeepaProducts(products, categoryName, budget){
+  const budgetLabel = budget && budget !== 'any' ? ` (${budget})` : '';
+  let html = `<h2>✅ ${categoryName}${budgetLabel} — ${LANG==='uk'?'Реальні дані Keepa (оновлено зараз)':'Real Keepa data (just updated)'}</h2>`;
+  html += '<table style="width:100%;border-collapse:collapse;margin:12px 0;font-size:13px;">';
+  html += '<tr><th style="border-bottom:2px solid var(--accent);padding:8px;text-align:left;color:var(--accent);">#</th>';
+  html += '<th style="border-bottom:2px solid var(--accent);padding:8px;text-align:left;color:var(--accent);">'+( LANG==='uk'?'Товар':'Product')+'</th>';
+  html += '<th style="border-bottom:2px solid var(--accent);padding:8px;color:var(--accent);">ASIN</th>';
+  html += '<th style="border-bottom:2px solid var(--accent);padding:8px;color:var(--accent);">BSR</th>';
+  html += '<th style="border-bottom:2px solid var(--accent);padding:8px;color:var(--accent);">'+(LANG==='uk'?'Ціна':'Price')+'</th>';
+  html += '<th style="border-bottom:2px solid var(--accent);padding:8px;color:var(--accent);">'+(LANG==='uk'?'Продавці':'Sellers')+'</th>';
+  html += '<th style="border-bottom:2px solid var(--accent);padding:8px;color:var(--accent);">'+(LANG==='uk'?'Доступ':'Access')+'</th>';
+  html += '<th style="border-bottom:2px solid var(--accent);padding:8px;color:var(--accent);">⭐</th>';
+  html += '<th style="border-bottom:2px solid var(--accent);padding:8px;color:var(--accent);">'+(LANG==='uk'?'Відгуки':'Reviews')+'</th>';
+  html += '<th style="border-bottom:2px solid var(--accent);padding:8px;color:var(--accent);">'+(LANG==='uk'?'Де купити':'Buy')+'</th></tr>';
+
+  products.forEach((p, i) => {
+    if(!p || !p.title) return;
+    
+    // === PRICE ===
+    const sc = p.stats && p.stats.current ? p.stats.current : [];
+    let price = keepaPrice(sc[0]) || keepaPrice(sc[1]) || keepaPrice(sc[18]);
+    if(!price && p.csv){
+      const csvAmazon = keepaCsvLast(p.csv[0]);
+      const csvNew = keepaCsvLast(p.csv[1]);
+      price = keepaPrice(csvAmazon) || keepaPrice(csvNew);
+    }
+    
+    // === BSR ===
+    let bsr = sc[3] > 0 ? sc[3] : null;
+    if(!bsr && p.csv && p.csv[3]) bsr = keepaCsvLast(p.csv[3]);
+    if(!bsr && p.salesRank){
+      const ranks = Object.values(p.salesRank);
+      if(ranks.length && ranks[0] > 0) bsr = ranks[0];
+    }
+    
+    // === RATING ===
+    let ratingRaw = sc[16] > 0 ? sc[16] : (p.rating > 0 ? p.rating : null);
+    if(!ratingRaw && p.csv && p.csv[16]) ratingRaw = keepaCsvLast(p.csv[16]);
+    const rating = ratingRaw ? (ratingRaw / 10).toFixed(1) : '—';
+    
+    // === REVIEWS ===
+    let reviews = sc[17] > 0 ? sc[17] : null;
+    if(!reviews && p.reviewCount > 0) reviews = p.reviewCount;
+    if(!reviews && p.csv && p.csv[17]) reviews = keepaCsvLast(p.csv[17]);
+
+    // === SELLER COUNT ===
+    const totalSellers = getSellerCount(p);
+
+    // === GATING ESTIMATE ===
+    const gating = estimateGating(p, totalSellers);
+    
+    const title = p.title.length > 80 ? p.title.substring(0,77)+'...' : p.title;
+    const asinLink = `https://www.amazon.com/dp/${p.asin}`;
+    const encName = encodeURIComponent(p.title.substring(0,60));
+    
+    html += `<tr style="border-bottom:1px solid var(--border);">`;
+    html += `<td style="padding:8px;color:var(--accent);font-weight:700;">${i+1}</td>`;
+    html += `<td style="padding:8px;"><a href="${asinLink}" target="_blank" style="color:var(--text);text-decoration:none;"><strong>${title}</strong></a></td>`;
+    html += `<td style="padding:8px;font-family:var(--font-mono);font-size:11px;">${p.asin}</td>`;
+    html += `<td style="padding:8px;font-weight:700;color:var(--green);">${bsr ? '#'+bsr.toLocaleString() : '—'}</td>`;
+    html += `<td style="padding:8px;font-weight:700;">$${price || '—'}</td>`;
+    html += `<td style="padding:8px;text-align:center;">${totalSellers || '—'}</td>`;
+    html += `<td style="padding:8px;text-align:center;" title="${gating.tip}">${gating.badge}</td>`;
+    html += `<td style="padding:8px;">${rating}</td>`;
+    html += `<td style="padding:8px;">${reviews ? (typeof reviews === 'number' ? reviews.toLocaleString() : reviews) : '—'}</td>`;
+    html += `<td style="padding:6px;font-size:11px;white-space:nowrap;">
+      <a href="https://www.alibaba.com/trade/search?SearchText=${encName}" target="_blank" title="Alibaba" style="color:var(--accent);text-decoration:none;margin-right:4px;">Ali</a>
+      <a href="https://www.ebay.com/sch/i.html?_nkw=${encName}+wholesale" target="_blank" title="eBay" style="color:var(--accent);text-decoration:none;margin-right:4px;">eBay</a>
+      <a href="https://www.temu.com/search_result.html?search_key=${encName}" target="_blank" title="Temu" style="color:var(--accent);text-decoration:none;">Temu</a>
+    </td>`;
+    html += `</tr>`;
+  });
+  html += '</table>';
+  
+  // Legend
+  html += `<div style="font-size:11px;color:var(--muted);margin-top:8px;">
+    <p>✅ ${LANG==='uk'?'Дані підтверджені Keepa API в реальному часі':'Data verified by Keepa API in real-time'}</p>
+    <p style="margin-top:4px;">${LANG==='uk'
+      ?'🟢 Відкритий = багато продавців, не преміум бренд · 🟡 Перевір = середня ймовірність gating · 🔴 Gated = преміум бренд або мало продавців · ⚪ ? = недостатньо даних'
+      :'🟢 Open = many sellers, not premium brand · 🟡 Check = may require approval · 🔴 Gated = premium brand or few sellers · ⚪ ? = not enough data'
+    }</p>
+  </div>`;
+  return html;
+}
+
+// ===== MODIFIED SCAN: KEEPA + CLAUDE HYBRID =====
+// Override switchTab to render history when switching to it
+const _origSwitchTab = switchTab;
+switchTab = function(name, el){
+  _origSwitchTab(name, el);
+  if(name === 'history') renderHistory();
+};
+</script>
+</body>
+</html>
